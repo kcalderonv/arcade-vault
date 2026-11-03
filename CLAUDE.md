@@ -48,6 +48,10 @@ Conexión con `@supabase/ssr` (spec 04). Solo infraestructura: la sesión de la 
 - `proxy.ts` + `lib/supabase/proxy.ts` — refresca las cookies de sesión; no redirige ni bloquea rutas (en Next 16 `middleware` está obsoleto y se llama `proxy`).
 - `GET /api/salud` — diagnóstico de conexión: `{ ok: true }` o `503 { ok: false }`.
 
+## Juegos (motores)
+
+Los juegos reales viven como motores TypeScript en `lib/games/<juego>/` (sin globals; reciben un `<canvas>` y devuelven `GameEngine` con `start/pause/resume/stop/destroy`, ver `lib/games/types.ts`). `lib/games/registry.ts` asocia el id de juego a su motor: hoy solo `rocas` (Asteroids, port de `resources/02-asteroids/`). `components/game-player.tsx` es el único shell (HUD, pausa, modal de fin y `saveScore`) y `components/game-canvas.tsx` gestiona el ciclo de vida del motor; los juegos sin motor mantienen la arena simulada.
+
 ## Skills
 
 Usa siempre /frontend-design para diseñar la interfaz de usuario.
