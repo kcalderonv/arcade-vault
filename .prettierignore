@@ -1,0 +1,5 @@
+.next
+node_modules
+resources
+package-lock.json
+.playwright-screenshots
