@@ -30,3 +30,46 @@ export interface SavedScore {
   name: string;
   at: number; // Date.now()
 }
+
+// ---- Home y Acerca de (SPEC 02) ----
+export type NeonColor = "cyan" | "magenta" | "yellow" | "green";
+export type FeatureIconKind = "GAMEPAD" | "FREE" | "TROPHY" | "ROCKET";
+export type HighlightIconKind = "HEART" | "BROWSER" | "PLANT";
+
+export interface Feature {
+  icon: FeatureIconKind;
+  title: string; // "JUEGOS CLÁSICOS"
+  desc: string;
+  color: NeonColor;
+}
+
+export interface StatBlock {
+  n: string; // "12+"
+  u: string; // "JUEGOS"
+  s: string; // "Y CONTANDO"
+}
+
+export interface RecentScore {
+  player: string; // "NEONFOX"
+  game: string; // título legible, p. ej. "Caída"
+  score: number;
+  ago: string; // "hace 2 min" (texto fijo)
+  color: NeonColor;
+}
+
+export interface TopPlayer {
+  rank: number;
+  player: string;
+  score: number;
+}
+
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
+export interface Highlight {
+  icon: HighlightIconKind;
+  text: string;
+  color: NeonColor;
+}
