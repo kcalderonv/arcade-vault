@@ -73,3 +73,16 @@ export interface Highlight {
   text: string;
   color: NeonColor;
 }
+
+export interface ContactPayload {
+  name: string; // 1–60 caracteres tras trim
+  email: string; // formato de correo, máx. 120
+  msg: string; // 1–2000 caracteres tras trim
+}
+
+export type ContactFieldErrors = Partial<Record<keyof ContactPayload, string>>;
+
+export type ContactActionState =
+  | { status: "idle" }
+  | { status: "success"; name: string }
+  | { status: "error"; message: string; fieldErrors?: ContactFieldErrors };
