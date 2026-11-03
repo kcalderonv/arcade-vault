@@ -1,6 +1,6 @@
 # SPEC 01 — MVP visual: portar las pantallas del prototipo a Next.js
 
-> **Estado:** Aprovado
+> **Estado:** Implementado
 > **Depende de:** ninguna (el tema CSS ya está portado en `app/globals.css` y `app/layout.tsx`, commit `01-styles`)
 > **Fecha:** 2026-11-02
 > **Objetivo:** Portar las cinco pantallas del prototipo `resources/templates/` (biblioteca, detalle, reproductor, salón de la fama y auth) a rutas del App Router de Next.js, solo en su parte visual y sin implementar ningún juego.
