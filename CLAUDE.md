@@ -36,3 +36,5 @@ Maqueta estática "Arcade Vault · Portal Retro" (React 18 UMD + Babel en el nav
 
 ## Skills
 Usa siempre /frontend-design para diseñar la interfaz de usuario.
+## Playwright
+Guarda todos los screenshots de Playwright en `.playwright-screenshots/` (usar `filename: ".playwright-screenshots/<nombre>.png"` en `browser_take_screenshot`). No dejarlos en la raíz del proyecto.
