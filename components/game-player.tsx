@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GameCanvas } from "@/components/game-canvas";
+import { getEngine } from "@/lib/games/registry";
+import type { GameState } from "@/lib/games/types";
 import { saveScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
 import type { Game } from "@/lib/types";
@@ -14,25 +17,58 @@ export function GamePlayer({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [nameEdit, setNameEdit] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [engineLevel, setEngineLevel] = useState(1);
+  const [powerUp, setPowerUp] = useState(0);
+  // Cambiar la clave remonta el canvas y reinicia el motor.
+  const [runId, setRunId] = useState(0);
+
+  const engine = getEngine(game.id);
 
   // Nombre: lo editado en el modal, si no el de la sesión, si no INVITADO.
   const name = nameEdit ?? user?.name ?? "INVITADO";
-  // El nivel sube cada 2500 puntos (derivado de la puntuación).
-  const level = 1 + Math.floor(score / 2500);
+  // Con motor real el nivel lo calcula el juego; en la simulación, cada 2500 puntos.
+  const level = engine ? engineLevel : 1 + Math.floor(score / 2500);
+
+  const handleState = (s: GameState) => {
+    setScore(s.score);
+    setLives(s.lives);
+    setEngineLevel(s.level);
+    setPowerUp(s.powerUpSeconds);
+  };
+
+  const handleGameOver = (finalScore: number) => {
+    setScore(finalScore);
+    setLives(0);
+    setPowerUp(0);
+    setOver(true);
+  };
+
+  // Pausa automática al ocultar la pestaña (solo con motor real).
+  useEffect(() => {
+    if (!engine || over) return;
+    const onVisibility = () => {
+      if (document.hidden) setPaused(true);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [engine, over]);
 
   useEffect(() => {
-    if (over || paused) return;
+    if (engine || over || paused) return;
     // El azar vive en el callback del intervalo, nunca durante el render.
     const t = setInterval(
       () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
       220,
     );
     return () => clearInterval(t);
-  }, [over, paused]);
+  }, [engine, over, paused]);
 
   const restart = () => {
     setScore(0);
     setLives(3);
+    setEngineLevel(1);
+    setPowerUp(0);
+    setRunId((r) => r + 1);
     setPaused(false);
     setOver(false);
     setSaved(false);
@@ -60,12 +96,33 @@ export function GamePlayer({ game }: { game: Game }) {
             <div className="l">Nivel</div>
             <div className="v">{String(level).padStart(2, "0")}</div>
           </div>
+          {engine && powerUp > 0 && (
+            <div className="hud-stat">
+              <div className="l">Power-up 3x</div>
+              <div className="v" style={{ color: "var(--cyan)" }}>
+                {powerUp.toFixed(1)}s
+              </div>
+            </div>
+          )}
         </div>
         <div className="hud-actions">
-          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+          <button
+            className="btn yellow"
+            onClick={(e) => {
+              // Soltar el foco para que Espacio/flechas lleguen al juego.
+              e.currentTarget.blur();
+              setPaused((p) => !p);
+            }}
+          >
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
-          <button className="btn magenta" onClick={() => setOver(true)}>
+          <button
+            className="btn magenta"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              setOver(true);
+            }}
+          >
             FIN
           </button>
           <Link className="btn ghost" href={`/juegos/${game.id}`}>
@@ -76,13 +133,24 @@ export function GamePlayer({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          <div className="game-arena">
-            <div className="grid-floor"></div>
-            <div className="enemy e1"></div>
-            <div className="enemy e2"></div>
-            <div className="enemy e3"></div>
-            <div className="player-ship"></div>
-          </div>
+          {engine ? (
+            <GameCanvas
+              key={runId}
+              factory={engine}
+              onState={handleState}
+              onGameOver={handleGameOver}
+              paused={paused}
+              over={over}
+            />
+          ) : (
+            <div className="game-arena">
+              <div className="grid-floor"></div>
+              <div className="enemy e1"></div>
+              <div className="enemy e2"></div>
+              <div className="enemy e3"></div>
+              <div className="player-ship"></div>
+            </div>
+          )}
           {paused && (
             <div
               className="crt-content"
