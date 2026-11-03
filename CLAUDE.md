@@ -32,3 +32,7 @@ Maqueta estática "Arcade Vault · Portal Retro" (React 18 UMD + Babel en el nav
 - `data.jsx` — datos mock de juegos/usuarios.
 - Pantallas: `biblioteca` (catálogo), `detalle`, `reproductor` (juego), `salon` (ranking), `auth`, `nav`; `app.jsx` orquesta el enrutado.
 - En el prototipo el estado vive en el cliente: ruta serializada en `location.hash`, usuario en `localStorage["av_user"]` y puntajes en `localStorage["av_scores"]`. Al portar a Next.js esto debe reemplazarse por rutas del App Router y persistencia real.
+
+
+## Skills
+Usa siempre /frontend-design para diseñar la interfaz de usuario.
