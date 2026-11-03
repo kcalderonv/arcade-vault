@@ -23,6 +23,14 @@ if ($prettierExts -contains $ext -and (Test-Path 'node_modules\prettier')) {
   & npx --no-install prettier --write $full *> $null
 }
 
+$compactExts = '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.css', '.html', '.yml', '.yaml'
+if ($compactExts -contains $ext) {
+  $text = [IO.File]::ReadAllText($full)
+  $lines = $text -split "`r?`n" | ForEach-Object { $_.TrimEnd() } | Where-Object { $_ -ne '' }
+  $compact = ($lines -join "`n") + "`n"
+  if ($compact -cne $text) { [IO.File]::WriteAllText($full, $compact, (New-Object Text.UTF8Encoding($false))) }
+}
+
 if ($eslintExts -contains $ext -and (Test-Path 'node_modules\eslint')) {
   $out = & npx --no-install eslint --fix $full 2>&1 | Out-String
   if ($LASTEXITCODE -ne 0) {
