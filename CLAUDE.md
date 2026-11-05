@@ -50,6 +50,8 @@ Conexión con `@supabase/ssr` (spec 04). Solo infraestructura: la sesión de la 
 
 ## Juegos (motores)
 
+Además de `rocas`, `caida` (Tetris, spec 07, port de `resources/started-games/03-tetris/`) tiene motor en `lib/games/tetris/`: canvas 800×600 con el tablero 10×20 centrado y la pieza SIGUIENTE dibujada a la derecha. `GameState.lives` y `lines` son opcionales: el HUD de `game-player.tsx` muestra VIDAS solo si el motor envía `lives` y LÍNEAS solo si envía `lines`.
+
 Los juegos reales viven como motores TypeScript en `lib/games/<juego>/` (sin globals; reciben un `<canvas>` y devuelven `GameEngine` con `start/pause/resume/stop/destroy`, ver `lib/games/types.ts`). `lib/games/registry.ts` asocia el id de juego a su motor: hoy solo `rocas` (Asteroids, port de `resources/02-asteroids/`). `components/game-player.tsx` es el único shell (HUD, pausa, modal de fin y `saveScore`) y `components/game-canvas.tsx` gestiona el ciclo de vida del motor; los juegos sin motor mantienen la arena simulada.
 
 ## Leaderboard (tablas `games` y `scores`)

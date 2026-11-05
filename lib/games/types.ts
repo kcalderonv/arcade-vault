@@ -1,7 +1,10 @@
 export interface GameState {
     score: number;
-    lives: number;
+    /** Ausente en juegos sin vidas (Tetris): el HUD oculta VIDAS. */
+    lives?: number;
     level: number;
+    /** Líneas completadas; solo Tetris. El HUD muestra LÍNEAS si existe. */
+    lines?: number;
     /** Segundos restantes del power-up 3x; 0 si no está activo. */
     powerUpSeconds: number;
 }
