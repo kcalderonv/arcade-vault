@@ -1316,3 +1316,23 @@ a.lb-link { display: inline-block; }
 .term-error .prompt { color: var(--cyan); margin-right: 8px; }
 .field-error { font-family: var(--mono); font-size: 11px; color: var(--magenta); }
 .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* ===== SPEC 08: juegos sin motor en la Biblioteca ===== */
+.card.soon { cursor: default; }
+.card.soon:hover { transform: none; border-color: var(--line); box-shadow: none; }
+.card.soon:hover::before { opacity: 0; }
+.card.soon .cover { filter: grayscale(0.7) brightness(0.7); }
+.card .cover .soon-tag {
+  position: absolute; right: 8px; top: 8px;
+  font-family: var(--pixel); font-size: 8px;
+  padding: 4px 6px;
+  background: rgba(0,0,0,0.75);
+  color: var(--magenta);
+  border: 1px solid var(--magenta);
+  z-index: 2;
+}
+.btn.soon-btn { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.av-grid-status {
+  grid-column: 1 / -1; text-align: center; padding: 80px 0;
+  min-height: 320px;
+}
