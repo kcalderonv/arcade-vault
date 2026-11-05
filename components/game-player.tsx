@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { submitScore } from "@/app/juegos/[id]/jugar/actions";
 import { GameCanvas } from "@/components/game-canvas";
 import { getEngine } from "@/lib/games/registry";
 import type { GameState } from "@/lib/games/types";
-import { saveScore } from "@/lib/scores";
 import { useSession } from "@/lib/session";
 import type { Game } from "@/lib/types";
 
@@ -17,6 +17,8 @@ export function GamePlayer({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [nameEdit, setNameEdit] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, startSaving] = useTransition();
   const [engineLevel, setEngineLevel] = useState(1);
   const [powerUp, setPowerUp] = useState(0);
   // Cambiar la clave remonta el canvas y reinicia el motor.
@@ -56,10 +58,7 @@ export function GamePlayer({ game }: { game: Game }) {
   useEffect(() => {
     if (engine || over || paused) return;
     // El azar vive en el callback del intervalo, nunca durante el render.
-    const t = setInterval(
-      () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
-      220,
-    );
+    const t = setInterval(() => setScore((s) => s + Math.floor(10 + Math.random() * 90)), 220);
     return () => clearInterval(t);
   }, [engine, over, paused]);
 
@@ -72,6 +71,20 @@ export function GamePlayer({ game }: { game: Game }) {
     setPaused(false);
     setOver(false);
     setSaved(false);
+    setSaveError(null);
+  };
+
+  const handleSave = () => {
+    setSaveError(null);
+    startSaving(async () => {
+      try {
+        const res = await submitScore(game.id, name, score);
+        if (res.ok) setSaved(true);
+        else setSaveError(res.error);
+      } catch {
+        setSaveError("SIN CONEXIÓN. REVISA TU RED E INTÉNTALO DE NUEVO.");
+      }
+    });
   };
 
   return (
@@ -152,10 +165,7 @@ export function GamePlayer({ game }: { game: Game }) {
             </div>
           )}
           {paused && (
-            <div
-              className="crt-content"
-              style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
-            >
+            <div className="crt-content" style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}>
               <div>
                 <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
                   EN PAUSA
@@ -189,24 +199,32 @@ export function GamePlayer({ game }: { game: Game }) {
             <div className="final-label">PUNTUACIÓN FINAL</div>
             <div className="final">{score.toLocaleString("es-ES")}</div>
             {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) =>
-                    setNameEdit(e.target.value.toUpperCase().slice(0, 10))
-                  }
-                  placeholder="TUS INICIALES"
-                />
-                <button
-                  className="btn yellow"
-                  onClick={() => {
-                    saveScore({ game: game.id, score, name });
-                    setSaved(true);
-                  }}
-                >
-                  GUARDAR PUNTUACIÓN
-                </button>
-              </div>
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    onChange={(e) => setNameEdit(e.target.value.toUpperCase().slice(0, 10))}
+                    placeholder="TUS INICIALES"
+                  />
+                  <button className="btn yellow" disabled={saving} onClick={handleSave}>
+                    {saving ? "GUARDANDO…" : saveError ? "REINTENTAR" : "GUARDAR PUNTUACIÓN"}
+                  </button>
+                </div>
+                {saveError && (
+                  <div
+                    role="alert"
+                    className="mono"
+                    style={{
+                      color: "var(--magenta)",
+                      fontSize: 11,
+                      letterSpacing: "0.12em",
+                      marginTop: 10,
+                    }}
+                  >
+                    ▸ {saveError}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
             )}

@@ -24,12 +24,15 @@ export interface SessionUser {
   name: string; // MAYÚSCULAS, máx. 10 caracteres
 }
 
-export interface SavedScore {
-  game: string; // Game.id
+// ---- Leaderboard real (SPEC 06) ----
+export interface LeaderboardRow {
+  id: number;
+  player_name: string;
   score: number;
-  name: string;
-  at: number; // Date.now()
+  created_at: string; // ISO 8601; se formatea a DD/MM/AAAA al mostrar
 }
+
+export type SubmitScoreResult = { ok: true } | { ok: false; error: string }; // mensaje en español, sin detalles internos
 
 // ---- Home y Acerca de (SPEC 02) ----
 export type NeonColor = "cyan" | "magenta" | "yellow" | "green";

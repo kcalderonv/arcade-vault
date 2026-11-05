@@ -52,6 +52,15 @@ Conexión con `@supabase/ssr` (spec 04). Solo infraestructura: la sesión de la 
 
 Los juegos reales viven como motores TypeScript en `lib/games/<juego>/` (sin globals; reciben un `<canvas>` y devuelven `GameEngine` con `start/pause/resume/stop/destroy`, ver `lib/games/types.ts`). `lib/games/registry.ts` asocia el id de juego a su motor: hoy solo `rocas` (Asteroids, port de `resources/02-asteroids/`). `components/game-player.tsx` es el único shell (HUD, pausa, modal de fin y `saveScore`) y `components/game-canvas.tsx` gestiona el ciclo de vida del motor; los juegos sin motor mantienen la arena simulada.
 
+## Leaderboard (tablas `games` y `scores`)
+
+Spec 06. Migración versionada en `supabase/migrations/20261103120000_games_y_scores.sql`. `games` (8 juegos, FK de `scores.game_id`; la UI sigue leyendo `GAMES` de `lib/data.ts`) y `scores` (`player_name` 1–10, `score` 0..9 999 999). RLS: lectura pública y **sin** políticas de escritura; la única vía de escritura es la función `public.submit_score(p_game, p_name, p_score)` (`SECURITY DEFINER`, `search_path = ''`, valida todo y guarda el nombre en mayúsculas).
+
+- Escritura: `components/game-player.tsx` → Server Action `submitScore` (`app/juegos/[id]/jugar/actions.ts`, revalida y llama al RPC con `lib/supabase/server.ts`).
+- Lectura: `lib/scores.ts` (`getTopScores`, `getBestScore`) con el cliente de navegador, llamado desde `useEffect` en `components/hall-of-fame.tsx`. Orden: `score desc, created_at asc`.
+- Riesgo aceptado: cualquiera con la clave publicable puede llamar a `submit_score` y falsear puntajes (sin Auth ni anti-trampas todavía). El aviso de `get_advisors` sobre esa función es esperado.
+- `localStorage["av_scores"]` ya no se usa.
+
 ## Skills
 
 Usa siempre /frontend-design para diseñar la interfaz de usuario.
