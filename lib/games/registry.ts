@@ -1,3 +1,4 @@
+import { createArkanoidEngine } from './arkanoid/engine';
 import { createAsteroidsEngine } from './asteroids/engine';
 import { createTetrisEngine } from './tetris/engine';
 import type { GameEngineFactory } from './types';
@@ -5,6 +6,7 @@ import type { GameEngineFactory } from './types';
 export const ENGINES: Partial<Record<string, GameEngineFactory>> = {
     rocas: createAsteroidsEngine,
     caida: createTetrisEngine,
+    'bloque-buster': createArkanoidEngine,
 };
 export function getEngine(gameId: string): GameEngineFactory | undefined {
     return ENGINES[gameId];

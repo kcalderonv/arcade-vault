@@ -52,6 +52,8 @@ Conexión con `@supabase/ssr` (spec 04). Solo infraestructura: la sesión de la 
 
 Además de `rocas`, `caida` (Tetris, spec 07, port de `resources/started-games/03-tetris/`) tiene motor en `lib/games/tetris/`: canvas 800×600 con el tablero 10×20 centrado y la pieza SIGUIENTE dibujada a la derecha. `GameState.lives` y `lines` son opcionales: el HUD de `game-player.tsx` muestra VIDAS solo si el motor envía `lives` y LÍNEAS solo si envía `lines`.
 
+`bloque-buster` (Arkanoid, spec 08, port de `resources/started-games/04-arkanoid/`) tiene motor en `lib/games/arkanoid/`: 3 vidas, 5 niveles, canvas 800×600 con sprites de `public/games/bloque-buster/` (si el spritesheet falla degrada a rectángulos de color) y sonidos; ratón y `←` `→`. Ganar el nivel 5 llama a `onGameOver(score)`. No envía `lines` ni power-up.
+
 Los juegos reales viven como motores TypeScript en `lib/games/<juego>/` (sin globals; reciben un `<canvas>` y devuelven `GameEngine` con `start/pause/resume/stop/destroy`, ver `lib/games/types.ts`). `lib/games/registry.ts` asocia el id de juego a su motor: hoy solo `rocas` (Asteroids, port de `resources/02-asteroids/`). `components/game-player.tsx` es el único shell (HUD, pausa, modal de fin y `saveScore`) y `components/game-canvas.tsx` gestiona el ciclo de vida del motor; los juegos sin motor mantienen la arena simulada.
 
 ## Leaderboard (tablas `games` y `scores`)
@@ -62,6 +64,7 @@ Spec 06. Migración versionada en `supabase/migrations/20261103120000_games_y_sc
 - Lectura: `lib/scores.ts` (`getTopScores`, `getBestScore`) con el cliente de navegador, llamado desde `useEffect` en `components/hall-of-fame.tsx`. Orden: `score desc, created_at asc`.
 - Riesgo aceptado: cualquiera con la clave publicable puede llamar a `submit_score` y falsear puntajes (sin Auth ni anti-trampas todavía). El aviso de `get_advisors` sobre esa función es esperado.
 - `localStorage["av_scores"]` ya no se usa.
+- `/biblioteca` (spec 08) lee de la BD: `lib/library.ts` (`getLibraryGames`, cliente de navegador desde `useEffect`) une `games` (título, categoría) con la vista `game_best_scores` (`max(score)` por juego, `security_invoker`, migración `20261105120000_vista_game_best_scores.sql`) y la presentación (`short`, `cover`, `color`) de `GAMES` por id. Los juegos sin motor en `lib/games/registry.ts` salen como "PRÓXIMAMENTE". `best`/`plays` de `lib/data.ts` siguen siendo mock solo en `/juegos/[id]`.
 
 ## Skills
 

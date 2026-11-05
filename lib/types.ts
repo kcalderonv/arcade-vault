@@ -89,3 +89,9 @@ export type ContactActionState =
   | { status: "idle" }
   | { status: "success"; name: string }
   | { status: "error"; message: string; fieldErrors?: ContactFieldErrors };
+
+// ---- Biblioteca con datos reales (SPEC 08) ----
+export interface LibraryGame extends Pick<Game, "id" | "title" | "cat" | "short" | "cover" | "color"> {
+  best: number | null; // máximo de scores; null si no hay partidas guardadas
+  playable: boolean; // true si hay motor registrado en lib/games/registry.ts
+}
