@@ -12,7 +12,8 @@ import type { Game } from "@/lib/types";
 export function GamePlayer({ game }: { game: Game }) {
   const { user } = useSession();
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState<number | null>(3);
+  const [lines, setLines] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [nameEdit, setNameEdit] = useState<string | null>(null);
@@ -33,14 +34,15 @@ export function GamePlayer({ game }: { game: Game }) {
 
   const handleState = (s: GameState) => {
     setScore(s.score);
-    setLives(s.lives);
+    setLives(s.lives ?? null);
+    setLines(s.lines ?? null);
     setEngineLevel(s.level);
     setPowerUp(s.powerUpSeconds);
   };
 
   const handleGameOver = (finalScore: number) => {
     setScore(finalScore);
-    setLives(0);
+    setLives((l) => (l === null ? null : 0));
     setPowerUp(0);
     setOver(true);
   };
@@ -65,6 +67,7 @@ export function GamePlayer({ game }: { game: Game }) {
   const restart = () => {
     setScore(0);
     setLives(3);
+    setLines(null);
     setEngineLevel(1);
     setPowerUp(0);
     setRunId((r) => r + 1);
@@ -101,10 +104,18 @@ export function GamePlayer({ game }: { game: Game }) {
             <div className="l">Puntuación</div>
             <div className="v">{score.toLocaleString("es-ES")}</div>
           </div>
-          <div className="hud-stat lives">
-            <div className="l">Vidas</div>
-            <div className="v">{"♥ ".repeat(lives).trim() || "—"}</div>
-          </div>
+          {lives !== null && (
+            <div className="hud-stat lives">
+              <div className="l">Vidas</div>
+              <div className="v">{"♥ ".repeat(lives).trim() || "—"}</div>
+            </div>
+          )}
+          {lines !== null && (
+            <div className="hud-stat">
+              <div className="l">Líneas</div>
+              <div className="v">{lines.toLocaleString("es-ES")}</div>
+            </div>
+          )}
           <div className="hud-stat level">
             <div className="l">Nivel</div>
             <div className="v">{String(level).padStart(2, "0")}</div>
