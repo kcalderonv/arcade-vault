@@ -54,7 +54,9 @@ Además de `rocas`, `caida` (Tetris, spec 07, port de `resources/started-games/0
 
 `bloque-buster` (Arkanoid, spec 08, port de `resources/started-games/04-arkanoid/`) tiene motor en `lib/games/arkanoid/`: 3 vidas, 5 niveles, canvas 800×600 con sprites de `public/games/bloque-buster/` (si el spritesheet falla degrada a rectángulos de color) y sonidos; ratón y `←` `→`. Ganar el nivel 5 llama a `onGameOver(score)`. No envía `lines` ni power-up.
 
-Los juegos reales viven como motores TypeScript en `lib/games/<juego>/` (sin globals; reciben un `<canvas>` y devuelven `GameEngine` con `start/pause/resume/stop/destroy`, ver `lib/games/types.ts`). `lib/games/registry.ts` asocia el id de juego a su motor: hoy solo `rocas` (Asteroids, port de `resources/02-asteroids/`). `components/game-player.tsx` es el único shell (HUD, pausa, modal de fin y `saveScore`) y `components/game-canvas.tsx` gestiona el ciclo de vida del motor; los juegos sin motor mantienen la arena simulada.
+`serpentina` (Snake, spec 09, diseño nuevo: `resources/started-games/05-snake-assets/` solo trae sprites) tiene motor en `lib/games/snake/`: grilla 20×15 de celdas de 40 px sobre canvas 800×600, ticks por acumulador (150 ms −10 ms por nivel, mínimo 60), +10 por fruta, nivel cada 5 frutas, pared o cuerpo matan, flechas/WASD con cola de 2 giros. Frutas de `public/games/serpentina/fruits.png` (si falla, círculo magenta). Sin sonido; no envía `lives`, `lines` ni power-up.
+
+Los juegos reales viven como motores TypeScript en `lib/games/<juego>/` (sin globals; reciben un `<canvas>` y devuelven `GameEngine` con `start/pause/resume/stop/destroy`, ver `lib/games/types.ts`). `lib/games/registry.ts` asocia el id de juego a su motor: hoy `rocas`, `caida`, `bloque-buster` y `serpentina` (Asteroids, port de `resources/02-asteroids/`). `components/game-player.tsx` es el único shell (HUD, pausa, modal de fin y `saveScore`) y `components/game-canvas.tsx` gestiona el ciclo de vida del motor; los juegos sin motor mantienen la arena simulada.
 
 ## Leaderboard (tablas `games` y `scores`)
 

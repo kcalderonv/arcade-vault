@@ -26,7 +26,7 @@ export const GAMES: Game[] = [
         id: 'serpentina',
         title: 'SERPENTINA',
         short: 'Crece sin morder tu propia cola.',
-        long: 'Una serpiente de luz recorre la grilla buscando núcleos magenta. Cada bocado la alarga y la hace más veloz. Un movimiento en falso y se devora a sí misma.',
+        long: 'Guía a la serpiente por una grilla de 20×15 con las flechas o WASD y devora frutas: cada una suma 10 puntos y la alarga un segmento. Cada 5 frutas subes de nivel y la serpiente se acelera. Chocar con una pared o con tu propia cola termina la partida.',
         cat: 'ARCADE',
         cover: 'cover-snake',
         color: 'green',
