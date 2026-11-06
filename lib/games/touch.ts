@@ -1,17 +1,18 @@
 import type { InputAction } from './types';
 /** Distancia mínima (px CSS) para reconocer un deslizamiento. */
 export const SWIPE_MIN_PX = 24;
-export interface TouchButton {
+export interface TouchKey {
     action: InputAction;
-    /** Texto visible: '◀', 'DISPARO'… */
-    label: string;
     ariaLabel: string;
     /** Repetición al mantener pulsado (solo Caída). */
     repeat?: { delayMs: number; intervalMs: number };
 }
 export interface TouchLayout {
-    left: TouchButton[];
-    right: TouchButton[];
+    /** Cruceta. Una dirección ausente se pinta atenuada e inerte. */
+    dpad: { up?: TouchKey; down?: TouchKey; left?: TouchKey; right?: TouchKey };
+    /** Botón A (magenta) y B (cian). Ausente = atenuado e inerte. */
+    a?: TouchKey;
+    b?: TouchKey;
     /** Capa de deslizar sobre la pantalla (Serpentina). */
     swipe?: boolean;
     /** Línea de ayuda bajo el canvas. */
@@ -19,40 +20,44 @@ export interface TouchLayout {
 }
 const SIDE_REPEAT = { delayMs: 200, intervalMs: 80 };
 const DOWN_REPEAT = { delayMs: 200, intervalMs: 50 };
-/** Controles táctiles por id de juego (solo juegos con motor real). */
+/** Gamepad táctil por id de juego (solo juegos con motor real). */
 export const TOUCH_LAYOUTS: Record<string, TouchLayout> = {
     rocas: {
-        left: [
-            { action: 'left', label: '◀', ariaLabel: 'Girar a la izquierda' },
-            { action: 'right', label: '▶', ariaLabel: 'Girar a la derecha' },
-        ],
-        right: [
-            { action: 'up', label: '▲', ariaLabel: 'Impulso' },
-            { action: 'primary', label: 'DISPARO', ariaLabel: 'Disparar' },
-        ],
-        hint: 'GIRA · IMPULSO · DISPARO (PUEDES USAR DOS DEDOS)',
+        dpad: {
+            left: { action: 'left', ariaLabel: 'Girar a la izquierda' },
+            right: { action: 'right', ariaLabel: 'Girar a la derecha' },
+            up: { action: 'up', ariaLabel: 'Impulso' },
+        },
+        a: { action: 'primary', ariaLabel: 'Disparar' },
+        b: { action: 'up', ariaLabel: 'Impulso' },
+        hint: 'A = DISPARO · B = IMPULSO (PUEDES USAR DOS DEDOS)',
     },
     caida: {
-        left: [
-            { action: 'left', label: '◀', ariaLabel: 'Mover a la izquierda', repeat: SIDE_REPEAT },
-            { action: 'down', label: '▼', ariaLabel: 'Caída suave', repeat: DOWN_REPEAT },
-            { action: 'right', label: '▶', ariaLabel: 'Mover a la derecha', repeat: SIDE_REPEAT },
-        ],
-        right: [
-            { action: 'up', label: 'ROTAR', ariaLabel: 'Rotar pieza' },
-            { action: 'primary', label: 'CAÍDA', ariaLabel: 'Caída rápida' },
-        ],
-        hint: 'MUEVE · ROTA · CAÍDA RÁPIDA',
+        dpad: {
+            left: { action: 'left', ariaLabel: 'Mover a la izquierda', repeat: SIDE_REPEAT },
+            right: { action: 'right', ariaLabel: 'Mover a la derecha', repeat: SIDE_REPEAT },
+            up: { action: 'up', ariaLabel: 'Rotar pieza' },
+            down: { action: 'down', ariaLabel: 'Caída suave', repeat: DOWN_REPEAT },
+        },
+        a: { action: 'primary', ariaLabel: 'Caída rápida' },
+        b: { action: 'up', ariaLabel: 'Rotar pieza' },
+        hint: 'A = CAÍDA · B = ROTAR',
     },
     serpentina: {
-        left: [],
-        right: [],
+        dpad: {
+            left: { action: 'left', ariaLabel: 'Girar a la izquierda' },
+            right: { action: 'right', ariaLabel: 'Girar a la derecha' },
+            up: { action: 'up', ariaLabel: 'Girar hacia arriba' },
+            down: { action: 'down', ariaLabel: 'Girar hacia abajo' },
+        },
         swipe: true,
         hint: 'DESLIZA PARA GIRAR',
     },
     'bloque-buster': {
-        left: [],
-        right: [],
+        dpad: {
+            left: { action: 'left', ariaLabel: 'Mover la pala a la izquierda' },
+            right: { action: 'right', ariaLabel: 'Mover la pala a la derecha' },
+        },
         hint: 'ARRASTRA PARA MOVER LA PALA',
     },
 };
