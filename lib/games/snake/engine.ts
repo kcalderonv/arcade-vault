@@ -58,6 +58,8 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
     let lastTime: number | null = null;
     let fruitsImg: HTMLImageElement | null = null;
     let lastEmitted = '';
+    // El estado visual solo cambia por tick (≥60 ms): se redibuja únicamente cuando hay cambios.
+    let dirty = true;
     const emitState = () => {
         const sig = `${score}|${level}`;
         if (sig === lastEmitted) return;
@@ -103,11 +105,15 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
         }
         const growing = fruit !== null && fruit.cell.col === next.col && fruit.cell.row === next.row;
         // La cola se libera al avanzar, salvo que se esté creciendo.
-        const body = growing ? snake : snake.slice(0, -1);
-        if (body.some((c) => c.col === next.col && c.row === next.row)) {
-            finish();
-            return;
+        const bodyLen = growing ? snake.length : snake.length - 1;
+        for (let i = 0; i < bodyLen; i++) {
+            const c = snake[i];
+            if (c.col === next.col && c.row === next.row) {
+                finish();
+                return;
+            }
         }
+        dirty = true;
         snake.unshift(next);
         if (!growing) {
             snake.pop();
@@ -160,13 +166,14 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
                 ctx.fill();
             }
         }
-        snake.forEach((c, i) => {
+        ctx.shadowColor = '#00ff9c';
+        for (let i = 0; i < snake.length; i++) {
+            const c = snake[i];
             const pad = i === 0 ? 2 : 4;
             ctx.fillStyle = i === 0 ? '#b6ffd8' : i % 2 ? '#00ff9c' : '#00d884';
-            ctx.shadowColor = '#00ff9c';
-            ctx.shadowBlur = i === 0 ? 12 : 6;
+            if (i <= 1) ctx.shadowBlur = i === 0 ? 12 : 6;
             ctx.fillRect(c.col * CELL + pad, c.row * CELL + pad, CELL - pad * 2, CELL - pad * 2);
-        });
+        }
         ctx.shadowBlur = 0;
     };
     const loop = (ts: number) => {
@@ -175,7 +182,10 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
         const dt = Math.min((ts - lastTime) / 1000, MAX_DT);
         lastTime = ts;
         if (!paused && phase === 'playing') update(dt);
-        draw();
+        if (dirty) {
+            dirty = false;
+            draw();
+        }
         rafId = phase === 'playing' ? requestAnimationFrame(loop) : 0;
     };
     // ── Input ──────────────────────────────────────────────────────────────────
@@ -198,10 +208,14 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
     const loadFruits = () => {
         const img = new Image();
         img.onload = () => {
-            if (!destroyed) fruitsImg = img;
+            if (destroyed) return;
+            fruitsImg = img;
+            dirty = true;
         };
         img.onerror = () => {
-            if (!destroyed) fruitsImg = null; // degrada a círculo magenta
+            if (destroyed) return;
+            fruitsImg = null; // degrada a círculo magenta
+            dirty = true;
         };
         img.src = FRUITS_SRC;
     };
@@ -215,6 +229,7 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
             window.addEventListener('blur', clearQueue);
             emitState();
             loadFruits();
+            dirty = false;
             draw();
             lastTime = null;
             rafId = requestAnimationFrame(loop);
