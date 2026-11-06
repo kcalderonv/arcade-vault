@@ -130,18 +130,17 @@ export const createTetrisEngine: GameEngineFactory = (canvas, callbacks): GameEn
         ctx.fillRect(0, 0, COLS * BLOCK, ROWS * BLOCK);
         ctx.strokeStyle = GRID_LINE;
         ctx.lineWidth = 0.5;
+        // Rejilla en un único trazado (1 stroke en vez de 28).
+        ctx.beginPath();
         for (let c = 1; c < COLS; c++) {
-            ctx.beginPath();
             ctx.moveTo(c * BLOCK, 0);
             ctx.lineTo(c * BLOCK, ROWS * BLOCK);
-            ctx.stroke();
         }
         for (let r = 1; r < ROWS; r++) {
-            ctx.beginPath();
             ctx.moveTo(0, r * BLOCK);
             ctx.lineTo(COLS * BLOCK, r * BLOCK);
-            ctx.stroke();
         }
+        ctx.stroke();
         for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) drawBlock(ctx, c, r, board[r][c]);
         if (showPiece) {
             const gy = ghostY();
@@ -266,14 +265,16 @@ export const createTetrisEngine: GameEngineFactory = (canvas, callbacks): GameEn
         const dt = lastTime === null ? 0 : Math.min(ts - lastTime, 50);
         lastTime = ts;
         dropAccum += dt;
+        // El estado solo cambia en el tick de caída (las acciones de entrada ya redibujan),
+        // así que no se redibuja ni se emite en frames sin cambios.
         if (dropAccum >= dropInterval) {
             dropAccum = 0;
             if (!collide(board, current.shape, current.x, current.y + 1)) current.y++;
             else lockPiece();
+            if (over) return;
+            draw();
+            emit();
         }
-        if (over) return;
-        draw();
-        emit();
         rafId = requestAnimationFrame(loop);
     };
     const startLoop = () => {

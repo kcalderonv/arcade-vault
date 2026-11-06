@@ -24,10 +24,8 @@ export class Bullet {
         this.ttl -= dt;
         if (this.ttl <= 0) this.dead = true;
     }
+    /** Requiere `fillStyle` y brillo ya aplicados (los fija el engine una vez por lote). */
     draw(ctx: CanvasRenderingContext2D, skin: SkinPalette) {
-        ctx.save();
-        ctx.fillStyle = skin.accent;
-        applyGlow(ctx, skin, skin.accent);
         if (skin.pixel) {
             const s = this.radius * 2;
             ctx.fillRect(Math.round(this.x - s / 2), Math.round(this.y - s / 2), s, s);
@@ -36,7 +34,6 @@ export class Bullet {
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
             ctx.fill();
         }
-        ctx.restore();
     }
 }
 // ── Asteroid ─────────────────────────────────────────────────────────────────
@@ -259,18 +256,15 @@ export class Particle {
         this.ttl -= dt;
         if (this.ttl <= 0) this.dead = true;
     }
+    /** Requiere `lineWidth` y brillo ya aplicados (los fija el engine una vez por lote). */
     draw(ctx: CanvasRenderingContext2D, skin: SkinPalette) {
         let alpha = this.ttl / this.life;
         // Retro: alfa escalonado (sin degradados suaves).
         if (skin.pixel) alpha = Math.ceil(alpha * 3) / 3;
-        ctx.save();
         ctx.strokeStyle = `rgba(${skin.particleRgb},${alpha.toFixed(2)})`;
-        ctx.lineWidth = skin.pixel ? 2 : 1;
-        applyGlow(ctx, skin, `rgb(${skin.particleRgb})`, 0.5);
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(this.x - this.vx * 0.05, this.y - this.vy * 0.05);
         ctx.stroke();
-        ctx.restore();
     }
 }

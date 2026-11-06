@@ -37,7 +37,7 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
     const paddle: Rect = { x: 0, y: PADDLE_Y, w: PADDLE_W, h: PADDLE_H };
     const ball: Ball = { x: 0, y: 0, w: BALL_SIZE, h: BALL_SIZE, vx: BASE_BALL_VX, vy: BASE_BALL_VY };
     let blocks: Block[] = [];
-    let explosions: Explosion[] = [];
+    const explosions: Explosion[] = [];
     let lives = INITIAL_LIVES;
     let score = 0;
     let level = 1;
@@ -48,8 +48,16 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
     let rafId = 0;
     let lastTime: number | null = null;
     let sheet: HTMLCanvasElement | null = null;
-    let bounceSound: HTMLAudioElement | null = null;
-    let breakSound: HTMLAudioElement | null = null;
+    // Pools de audio reutilizados (round-robin) en lugar de clonar un <audio> por golpe.
+    type SoundPool = { els: HTMLAudioElement[]; i: number };
+    let bounceSound: SoundPool | null = null;
+    let breakSound: SoundPool | null = null;
+    let aliveCount = 0;
+    const AUDIO_POOL = 4;
+    const makePool = (url: string): SoundPool => ({
+        els: Array.from({ length: AUDIO_POOL }, () => new Audio(url)),
+        i: 0,
+    });
     const keys = { ArrowLeft: false, ArrowRight: false };
     let lastEmitted = '';
     const emitState = () => {
@@ -58,10 +66,13 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
         lastEmitted = sig;
         callbacks.onState({ score, lives, level, powerUpSeconds: 0 });
     };
-    const play = (base: HTMLAudioElement | null) => {
-        if (!base) return;
+    const play = (pool: SoundPool | null) => {
+        if (!pool) return;
         try {
-            (base.cloneNode() as HTMLAudioElement).play().catch(() => {});
+            const el = pool.els[pool.i];
+            pool.i = (pool.i + 1) % pool.els.length;
+            el.currentTime = 0;
+            el.play().catch(() => {});
         } catch {
             /* audio no disponible */
         }
@@ -87,7 +98,8 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
             color: b.color,
             alive: true,
         }));
-        explosions = [];
+        explosions.length = 0;
+        aliveCount = blocks.length;
         initBall();
     };
     const finish = (next: Phase) => {
@@ -136,15 +148,22 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
                 score += POINTS_PER_BLOCK;
                 ball.vy = -ball.vy;
                 play(breakSound);
-                if (blocks.every((b) => !b.alive)) {
+                aliveCount--;
+                if (aliveCount <= 0) {
                     if (level < LAST_LEVEL) loadLevel(level + 1);
                     else won = true;
                 }
                 break; // un bloque por frame
             }
         }
-        for (const exp of explosions) exp.elapsed += dt * 1000;
-        explosions = explosions.filter((exp) => exp.elapsed < EXPLOSION_DURATION);
+        const dtMs = dt * 1000;
+        let keep = 0;
+        for (let i = 0; i < explosions.length; i++) {
+            const exp = explosions[i];
+            exp.elapsed += dtMs;
+            if (exp.elapsed < EXPLOSION_DURATION) explosions[keep++] = exp;
+        }
+        explosions.length = keep;
         if (won) {
             finish('won');
             return;
@@ -261,8 +280,8 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
             initPaddle();
             loadLevel(1);
             try {
-                bounceSound = new Audio(BOUNCE_SOUND_URL);
-                breakSound = new Audio(BREAK_SOUND_URL);
+                bounceSound = makePool(BOUNCE_SOUND_URL);
+                breakSound = makePool(BREAK_SOUND_URL);
             } catch {
                 bounceSound = breakSound = null;
             }
@@ -302,6 +321,7 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
             if (rafId) cancelAnimationFrame(rafId);
             rafId = 0;
             removeListeners();
+            for (const p of [bounceSound, breakSound]) p?.els.forEach((a) => a.pause());
             bounceSound = breakSound = null;
         },
     };

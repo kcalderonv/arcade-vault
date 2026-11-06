@@ -1,5 +1,5 @@
 import { setupCanvas } from '../canvas';
-import { DEFAULT_SKIN, SKINS } from '../skins';
+import { applyGlow, DEFAULT_SKIN, SKINS } from '../skins';
 import type { GameEngine, GameEngineFactory, GameState, InputAction } from '../types';
 import {
     H,
@@ -13,7 +13,7 @@ import {
     W,
 } from './constants';
 import { Asteroid, Bullet, Particle, PowerUp, Ship, type Keys } from './entities';
-import { dist, rand } from './utils';
+import { compact, dist2, rand } from './utils';
 type Phase = 'playing' | 'dead' | 'gameover';
 const GAME_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space']);
 /** Evita robar el teclado a controles de formulario (p. ej. el input del modal). */
@@ -81,6 +81,7 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
     let deadTimer = 0;
     let powerUpSpawned = false;
     let killsSinceSpawn = 0;
+    const spawnBuf: Asteroid[] = [];
     // ── Bucle ──────────────────────────────────────────────────────────────────
     let rafId: number | null = null;
     let lastTime: number | null = null;
@@ -116,7 +117,7 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
             do {
                 x = rand(0, W);
                 y = rand(0, H);
-            } while (Math.hypot(x - W / 2, y - H / 2) < SAFE_DIST);
+            } while ((x - W / 2) ** 2 + (y - H / 2) ** 2 < SAFE_DIST * SAFE_DIST);
             asteroids.push(new Asteroid(x, y, 3));
         }
     };
@@ -163,15 +164,15 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
     };
     const update = (dt: number) => {
         if (phase === 'gameover') {
-            particles.forEach((p) => p.update(dt));
-            particles = particles.filter((p) => !p.dead);
+            for (const p of particles) p.update(dt);
+            compact(particles);
             return;
         }
         if (phase === 'dead') {
             deadTimer -= dt;
-            particles.forEach((p) => p.update(dt));
-            particles = particles.filter((p) => !p.dead);
-            asteroids.forEach((a) => a.update(dt));
+            for (const p of particles) p.update(dt);
+            compact(particles);
+            for (const a of asteroids) a.update(dt);
             if (deadTimer <= 0) {
                 phase = 'playing';
                 ship.reset();
@@ -179,26 +180,31 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
             return;
         }
         // Disparar
-        if (pressed('Space')) bullets.push(...ship.tryShoot());
+        if (pressed('Space')) {
+            const shots = ship.tryShoot();
+            for (let i = 0; i < shots.length; i++) bullets.push(shots[i]);
+        }
         ship.update(dt, keys);
-        bullets.forEach((b) => b.update(dt));
-        asteroids.forEach((a) => a.update(dt));
-        particles.forEach((p) => p.update(dt));
-        powerUps.forEach((p) => p.update(dt));
-        bullets = bullets.filter((b) => !b.dead);
-        particles = particles.filter((p) => !p.dead);
-        powerUps = powerUps.filter((p) => !p.dead);
+        for (const b of bullets) b.update(dt);
+        for (const a of asteroids) a.update(dt);
+        for (const p of particles) p.update(dt);
+        for (const p of powerUps) p.update(dt);
+        compact(bullets);
+        compact(particles);
+        compact(powerUps);
         for (const p of powerUps) {
-            if (!p.dead && dist(ship, p) < ship.radius + p.radius) {
+            const rr = ship.radius + p.radius;
+            if (!p.dead && dist2(ship, p) < rr * rr) {
                 p.dead = true;
                 ship.tripleShot = POWERUP_DURATION;
             }
         }
         // Bala vs asteroide
-        const newAsteroids: Asteroid[] = [];
+        const newAsteroids = spawnBuf;
+        newAsteroids.length = 0;
         for (const b of bullets) {
             for (const a of asteroids) {
-                if (!a.dead && !b.dead && dist(b, a) < a.radius) {
+                if (!a.dead && !b.dead && dist2(b, a) < a.radius * a.radius) {
                     b.dead = true;
                     a.dead = true;
                     score += POINTS[a.size];
@@ -215,12 +221,14 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
                 }
             }
         }
-        asteroids = asteroids.filter((a) => !a.dead).concat(newAsteroids);
-        bullets = bullets.filter((b) => !b.dead);
+        compact(asteroids);
+        for (let i = 0; i < newAsteroids.length; i++) asteroids.push(newAsteroids[i]);
+        compact(bullets);
         // Nave vs asteroide
         if (ship.invincible <= 0) {
             for (const a of asteroids) {
-                if (dist(ship, a) < ship.radius + a.radius * 0.82) {
+                const rr = ship.radius + a.radius * 0.82;
+                if (dist2(ship, a) < rr * rr) {
                     killShip();
                     break;
                 }
@@ -232,10 +240,23 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
     const draw = () => {
         ctx.fillStyle = palette.bg;
         ctx.fillRect(0, 0, W, H);
-        particles.forEach((p) => p.draw(ctx, palette));
-        asteroids.forEach((a) => a.draw(ctx, palette));
-        powerUps.forEach((p) => p.draw(ctx, palette));
-        bullets.forEach((b) => b.draw(ctx, palette));
+        if (particles.length) {
+            // Estado común (grosor y brillo) una sola vez para todas las partículas.
+            ctx.save();
+            ctx.lineWidth = palette.pixel ? 2 : 1;
+            applyGlow(ctx, palette, `rgb(${palette.particleRgb})`, 0.5);
+            for (const p of particles) p.draw(ctx, palette);
+            ctx.restore();
+        }
+        for (const a of asteroids) a.draw(ctx, palette);
+        for (const p of powerUps) p.draw(ctx, palette);
+        if (bullets.length) {
+            ctx.save();
+            ctx.fillStyle = palette.accent;
+            applyGlow(ctx, palette, palette.accent);
+            for (const b of bullets) b.draw(ctx, palette);
+            ctx.restore();
+        }
         ship.draw(ctx, palette);
     };
     const loop = (ts: number) => {

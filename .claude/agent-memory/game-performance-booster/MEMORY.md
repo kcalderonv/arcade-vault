@@ -1,0 +1,4 @@
+- [Auditoría rocas](audits-rocas.md) — rendimiento del motor asteroids (2026-11-06): hecho y pendiente
+- [Auditoría caida](audits-caida.md) — Tetris: redibujo solo en tick, rejilla en un trazado (2026-11-06)
+- [Auditoría bloque-buster](audits-bloque-buster.md) — rendimiento de arkanoid 2026-11-06: pool de audio, sin filter por frame, pendientes
+- [Auditoría serpentina](audits-serpentina.md) — rendimiento de snake 2026-11-06: dirty-draw, tick sin allocs, pendientes
