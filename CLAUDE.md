@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Arcade Vault: plataforma para jugar online y competir por puntos. UI en español. El proyecto sigue Spec Driven Design (`/spec` y `/spec-impl`, skills de `Klerith/fernando-skills`, ver README).
 
-Estado actual: app de Next.js recién generada con Create Next App (`app/page.tsx`, `app/layout.tsx` aún con contenido por defecto). El diseño objetivo vive como prototipo en `resources/templates/` y todavía no está portado a Next.js.
+Estado actual: la UI del prototipo ya está portada a Next.js (App Router) y hay 9 specs implementadas (`specs/01`–`09`, ver sección Specs). Rutas: `/` (home), `/biblioteca`, `/juegos/[id]`, `/juegos/[id]/jugar`, `/salon`, `/auth`, `/acerca-de`, `GET /api/salud`. Cuatro juegos tienen motor real (`rocas`, `caida`, `bloque-buster`, `serpentina`); el resto del catálogo sale como "PRÓXIMAMENTE". Auth real y perfiles siguen pendientes (la sesión es `localStorage["av_user"]`). `demos/Demox.tsx` es un placeholder sin uso.
 
 ## Comandos
 
@@ -14,6 +14,7 @@ Estado actual: app de Next.js recién generada con Create Next App (`app/page.ts
 - `npm run build` / `npm run start` — build y servidor de producción
 - `npm run lint` — ESLint (flat config, `eslint.config.mjs`)
 - No hay framework de tests configurado.
+- Formato: Prettier (`.prettierrc`: 4 espacios, comillas simples, `printWidth` 120, `trailingComma: all`, LF). Lo aplica automáticamente el hook de `.claude/hooks/` (ver sección Hooks); no reformatear a mano.
 
 ## Next.js: versión con cambios incompatibles
 
@@ -68,9 +69,30 @@ Spec 06. Migración versionada en `supabase/migrations/20261103120000_games_y_sc
 - `localStorage["av_scores"]` ya no se usa.
 - `/biblioteca` (spec 08) lee de la BD: `lib/library.ts` (`getLibraryGames`, cliente de navegador desde `useEffect`) une `games` (título, categoría) con la vista `game_best_scores` (`max(score)` por juego, `security_invoker`, migración `20261105120000_vista_game_best_scores.sql`) y la presentación (`short`, `cover`, `color`) de `GAMES` por id. Los juegos sin motor en `lib/games/registry.ts` salen como "PRÓXIMAMENTE". `best`/`plays` de `lib/data.ts` siguen siendo mock solo en `/juegos/[id]`.
 
+## Specs y skills del proyecto
+
+Flujo Spec Driven: `/spec` (diseña la spec) → el humano pasa el estado a `Aprobado` → `/spec-impl NN-slug` (crea la rama `spec-NN-slug`, implementa paso a paso con pausas para revisar diffs). Las specs viven en `specs/NN-slug.md` (`specs/.spec-config.yml`: `AutoCreateBranch: true`). Cada spec se integra por PR desde su rama.
+
+Specs hechas: 01 MVP pantallas visuales · 02 home y acerca-de · 03 envío de correo de contacto · 04 conexión Supabase · 05 juego Asteroides · 06 leaderboard y tablas `games`/`scores` · 07 Tetris (`caida`) · 08 Arkanoid (`bloque-buster`) y biblioteca real · 09 Snake (`serpentina`).
+
+Skills en `.claude/skills/` (todas con `disable-model-invocation`, se invocan a mano):
+
+- `/spec` y `/spec-impl` — de `Klerith/fernando-skills` (fijadas en `skills-lock.json`).
+- `/add-game <carpeta de resources/started-games | nombre | descripción>` — skill propia: **solo genera la spec** (estado `Borrador`) para integrar un juego (motor TS, registro, reproductor, leaderboard). No escribe código ni toca `lib/`, `components/`, `app/` ni `resources/started-games/**`. Incluye `reference.md` y `spec-template.md`. Después se aprueba y se ejecuta `/spec-impl`.
+
+Para añadir un juego nuevo: `/add-game` → revisar y aprobar la spec → `/spec-impl`.
+
+## Hooks y MCP
+
+Configurados en `.claude/settings.json` (scripts PowerShell en `.claude/hooks/`):
+
+- `PostToolUse` (`Write|Edit`) → `format-lint.ps1`: ejecuta Prettier, elimina líneas en blanco en ts/tsx/js/json/css/html/yml y corre `eslint --fix`; si ESLint falla devuelve el error (exit 2) para corregirlo. Ignora `node_modules`, `.next`, `resources`, `.claude`, `.playwright-screenshots` y `package-lock.json`. Consecuencia: los archivos de código quedan sin líneas vacías; es esperado.
+- `Stop` y `Notification` → `play-sound.ps1`: reproduce `resources/claudecode-finished.mp3` (asíncrono).
+- `.mcp.json`: servidor MCP de Supabase (HTTP, `project_ref` del proyecto) para inspeccionar tablas, migraciones y `get_advisors`.
+
 ## Skills
 
-Usa siempre /frontend-design para diseñar la interfaz de usuario.
+Usa siempre /frontend-design para diseñar la interfaz de usuario. (Además están disponibles `/ui-ux-pro-max` y `/tdd`, aunque no hay tests configurados.)
 
 ## Playwright
 
