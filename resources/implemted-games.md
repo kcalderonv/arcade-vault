@@ -1,4 +1,4 @@
-# Juegos implementados en Arcade Vault
+/# Juegos implementados en Arcade Vault
 
 Actualizado: 2026-11-05.
 
