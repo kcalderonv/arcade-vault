@@ -53,6 +53,15 @@ export const TOUCH_LAYOUTS: Record<string, TouchLayout> = {
         swipe: true,
         hint: 'DESLIZA PARA GIRAR',
     },
+    ranaria: {
+        dpad: {
+            left: { action: 'left', ariaLabel: 'Saltar a la izquierda' },
+            right: { action: 'right', ariaLabel: 'Saltar a la derecha' },
+            up: { action: 'up', ariaLabel: 'Saltar hacia adelante' },
+            down: { action: 'down', ariaLabel: 'Saltar hacia atrás' },
+        },
+        hint: 'CRUCETA = SALTAR UNA CASILLA',
+    },
     'bloque-buster': {
         dpad: {
             left: { action: 'left', ariaLabel: 'Mover la pala a la izquierda' },

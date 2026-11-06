@@ -1,0 +1,1 @@
+- [Audit móvil](audit.md) — estado por juego/pantalla con fechas
