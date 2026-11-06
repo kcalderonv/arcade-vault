@@ -1,0 +1,2 @@
+- [Auditoria de skins](audit.md) — estado por juego, API compartida y ratios de contraste
+- [Preferencias](preferences.md) — decisiones del usuario y paletas aprobadas

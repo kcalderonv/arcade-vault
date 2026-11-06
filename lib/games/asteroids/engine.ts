@@ -1,3 +1,4 @@
+import { DEFAULT_SKIN, SKINS } from '../skins';
 import type { GameEngine, GameEngineFactory, GameState } from '../types';
 import {
     H,
@@ -19,7 +20,8 @@ function isFormTarget(t: EventTarget | null): boolean {
     if (!(t instanceof HTMLElement)) return false;
     return /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName) || t.isContentEditable;
 }
-export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks): GameEngine => {
+export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, options): GameEngine => {
+    let palette = SKINS[options?.skin ?? DEFAULT_SKIN] ?? SKINS[DEFAULT_SKIN];
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D no disponible');
     canvas.width = W;
@@ -223,13 +225,13 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks): Gam
         if (phase === 'playing' && asteroids.length === 0) nextLevel();
     };
     const draw = () => {
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = palette.bg;
         ctx.fillRect(0, 0, W, H);
-        particles.forEach((p) => p.draw(ctx));
-        asteroids.forEach((a) => a.draw(ctx));
-        powerUps.forEach((p) => p.draw(ctx));
-        bullets.forEach((b) => b.draw(ctx));
-        ship.draw(ctx);
+        particles.forEach((p) => p.draw(ctx, palette));
+        asteroids.forEach((a) => a.draw(ctx, palette));
+        powerUps.forEach((p) => p.draw(ctx, palette));
+        bullets.forEach((b) => b.draw(ctx, palette));
+        ship.draw(ctx, palette);
     };
     const loop = (ts: number) => {
         rafId = null;
@@ -275,6 +277,12 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks): Gam
         stop() {
             stopLoop();
             detach();
+        },
+        setSkin(next) {
+            if (destroyed) return;
+            palette = SKINS[next] ?? SKINS[DEFAULT_SKIN];
+            // Redibuja para que el cambio se vea también en pausa.
+            draw();
         },
         destroy() {
             destroyed = true;
