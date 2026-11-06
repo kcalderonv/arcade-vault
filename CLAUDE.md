@@ -82,6 +82,12 @@ Skills en `.claude/skills/` (todas con `disable-model-invocation`, se invocan a 
 
 Para añadir un juego nuevo: `/add-game` → revisar y aprobar la spec → `/spec-impl`.
 
+## Agentes
+
+Subagentes del proyecto en `.claude/agents/`:
+
+- `game-planner` — planifica y decide qué juego encaja con la plataforma. Compara 3–5 candidatos nuevos con criterios puntuados (encaje retro/arcade, viabilidad con `GameEngine`, coste, diversidad, rejugabilidad, assets), recomienda uno y sugiere el siguiente paso (`/add-game`). No escribe código ni specs. Tiene memoria persistente (`memory: project`) en `.claude/agent-memory/game-planner/` (`MEMORY.md`, `suggestions.md`, `preferences.md`) para no repetir lo ya sugerido; solo escribe ahí. Flujo para un juego nuevo: `game-planner` → `/add-game` → aprobar la spec → `/spec-impl`.
+
 ## Hooks y MCP
 
 Configurados en `.claude/settings.json` (scripts PowerShell en `.claude/hooks/`):
