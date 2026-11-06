@@ -1,5 +1,6 @@
+import { setupCanvas } from '../canvas';
 import { DEFAULT_SKIN, SKINS } from '../skins';
-import type { GameEngine, GameEngineFactory, GameState } from '../types';
+import type { GameEngine, GameEngineFactory, GameState, InputAction } from '../types';
 import {
     H,
     INITIAL_ASTEROIDS,
@@ -22,10 +23,7 @@ function isFormTarget(t: EventTarget | null): boolean {
 }
 export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, options): GameEngine => {
     let palette = SKINS[options?.skin ?? DEFAULT_SKIN] ?? SKINS[DEFAULT_SKIN];
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D no disponible');
-    canvas.width = W;
-    canvas.height = H;
+    const ctx = setupCanvas(canvas, W, H);
     // ── Input ──────────────────────────────────────────────────────────────────
     const keys: Keys = {};
     const justPressed: Keys = {};
@@ -42,6 +40,13 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
     };
     const onKeyUp = (e: KeyboardEvent) => {
         keys[e.code] = false;
+    };
+    const INPUT_KEYS: Record<InputAction, string | null> = {
+        left: 'ArrowLeft',
+        right: 'ArrowRight',
+        up: 'ArrowUp',
+        down: null,
+        primary: 'Space',
     };
     const clearInput = () => {
         for (const k of Object.keys(keys)) keys[k] = false;
@@ -277,6 +282,13 @@ export const createAsteroidsEngine: GameEngineFactory = (canvas, callbacks, opti
         stop() {
             stopLoop();
             detach();
+        },
+        input(action, pressed) {
+            const code = INPUT_KEYS[action];
+            if (!code || destroyed || !listening) return;
+            // Misma semántica que keydown/keyup sobre `keys` y `justPressed`.
+            if (pressed && !keys[code]) justPressed[code] = true;
+            keys[code] = pressed;
         },
         setSkin(next) {
             if (destroyed) return;

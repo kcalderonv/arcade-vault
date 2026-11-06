@@ -1,4 +1,5 @@
-import type { GameEngine, GameEngineFactory } from '../types';
+import { setupCanvas } from '../canvas';
+import type { GameEngine, GameEngineFactory, InputAction } from '../types';
 import {
     BALL_SIZE,
     BASE_BALL_VX,
@@ -31,10 +32,7 @@ type Explosion = Rect & { color: BlockColor; elapsed: number }; // ms
 type Ball = Rect & { vx: number; vy: number };
 type Phase = 'playing' | 'won' | 'lost';
 export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): GameEngine => {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D no disponible');
-    canvas.width = W;
-    canvas.height = H;
+    const ctx = setupCanvas(canvas, W, H);
     // ── Estado del juego (todo dentro del cierre) ──────────────────────────────
     const paddle: Rect = { x: 0, y: PADDLE_Y, w: PADDLE_W, h: PADDLE_H };
     const ball: Ball = { x: 0, y: 0, w: BALL_SIZE, h: BALL_SIZE, vx: BASE_BALL_VX, vy: BASE_BALL_VY };
@@ -213,7 +211,8 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
     const onKeyUp = (e: KeyboardEvent) => {
         if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') keys[e.code] = false;
     };
-    const onMouseMove = (e: MouseEvent) => {
+    // Un único handler para ratón, lápiz y dedo (la pala sigue la X del puntero).
+    const onPointerMove = (e: PointerEvent) => {
         if (paused || phase !== 'playing' || destroyed) return;
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left) * (W / rect.width);
@@ -229,7 +228,8 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
         document.removeEventListener('keydown', onKeyDown);
         document.removeEventListener('keyup', onKeyUp);
         window.removeEventListener('blur', clearKeys);
-        canvas.removeEventListener('mousemove', onMouseMove);
+        canvas.removeEventListener('pointermove', onPointerMove);
+        canvas.removeEventListener('pointerdown', onPointerMove);
     };
     const loadSheet = () => {
         const img = new Image();
@@ -269,7 +269,8 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup', onKeyUp);
             window.addEventListener('blur', clearKeys);
-            canvas.addEventListener('mousemove', onMouseMove);
+            canvas.addEventListener('pointermove', onPointerMove);
+            canvas.addEventListener('pointerdown', onPointerMove);
             emitState();
             loadSheet();
         },
@@ -288,6 +289,12 @@ export const createArkanoidEngine: GameEngineFactory = (canvas, callbacks): Game
             rafId = 0;
             phase = 'lost';
             clearKeys();
+        },
+        input(action: InputAction, pressed: boolean) {
+            // Como las flechas: mantenidas; el resto de acciones no aplica.
+            if (action !== 'left' && action !== 'right') return;
+            if (pressed && (paused || phase !== 'playing' || destroyed)) return;
+            keys[action === 'left' ? 'ArrowLeft' : 'ArrowRight'] = pressed;
         },
         destroy() {
             if (destroyed) return;

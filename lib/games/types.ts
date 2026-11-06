@@ -15,6 +15,8 @@ export interface GameEngineCallbacks {
     /** Una vez al perder la última vida. */
     onGameOver: (finalScore: number) => void;
 }
+/** Acciones semánticas de entrada no teclado (táctil). Cada motor decide qué significan. */
+export type InputAction = 'left' | 'right' | 'up' | 'down' | 'primary';
 export interface GameEngine {
     /** Inicia una partida nueva y arranca el bucle. */
     start(): void;
@@ -26,6 +28,8 @@ export interface GameEngine {
     destroy(): void;
     /** Opcional: cambia el skin en caliente (solo motores con soporte de skins). */
     setSkin?(skin: SkinId): void;
+    /** Opcional: entrada no teclado (táctil). `pressed=false` solo importa en acciones mantenidas. */
+    input?(action: InputAction, pressed: boolean): void;
 }
 export type GameEngineFactory = (
     canvas: HTMLCanvasElement,

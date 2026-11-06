@@ -1,4 +1,5 @@
-import type { GameEngine, GameEngineFactory, GameState } from '../types';
+import { setupCanvas } from '../canvas';
+import type { GameEngine, GameEngineFactory, GameState, InputAction } from '../types';
 import {
     BLOCK,
     BOARD_X,
@@ -24,10 +25,7 @@ function isFormTarget(t: EventTarget | null): boolean {
     return /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName) || t.isContentEditable;
 }
 export const createTetrisEngine: GameEngineFactory = (canvas, callbacks): GameEngine => {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D no disponible');
-    canvas.width = W;
-    canvas.height = H;
+    const ctx = setupCanvas(canvas, W, H);
     // ── Estado del juego (todo dentro del cierre) ──────────────────────────────
     let board: Board = createBoard();
     let current: Piece = { type: 1, shape: [[0]], x: 0, y: 0 };
@@ -205,32 +203,50 @@ export const createTetrisEngine: GameEngineFactory = (canvas, callbacks): GameEn
         spawn();
     };
     // ── Input ──────────────────────────────────────────────────────────────────
-    const onKeyDown = (e: KeyboardEvent) => {
-        if (isFormTarget(e.target)) return;
-        if (GAME_KEYS.has(e.code)) e.preventDefault();
+    type TetrisAction = 'left' | 'right' | 'down' | 'rotate' | 'drop';
+    const KEY_ACTIONS: Record<string, TetrisAction> = {
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+        ArrowDown: 'down',
+        ArrowUp: 'rotate',
+        KeyX: 'rotate',
+        Space: 'drop',
+    };
+    const INPUT_ACTIONS: Record<InputAction, TetrisAction> = {
+        left: 'left',
+        right: 'right',
+        down: 'down',
+        up: 'rotate',
+        primary: 'drop',
+    };
+    /** Ejecuta una acción (teclado o táctil) sobre la partida en curso. */
+    const performAction = (action: TetrisAction) => {
         if (paused || over || destroyed) return;
-        switch (e.code) {
-            case 'ArrowLeft':
+        switch (action) {
+            case 'left':
                 if (!collide(board, current.shape, current.x - 1, current.y)) current.x--;
                 break;
-            case 'ArrowRight':
+            case 'right':
                 if (!collide(board, current.shape, current.x + 1, current.y)) current.x++;
                 break;
-            case 'ArrowDown':
+            case 'down':
                 softDrop();
                 break;
-            case 'ArrowUp':
-            case 'KeyX':
+            case 'rotate':
                 tryRotate();
                 break;
-            case 'Space':
+            case 'drop':
                 hardDrop();
                 break;
-            default:
-                return;
         }
         if (!over) draw();
         emit();
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (isFormTarget(e.target)) return;
+        if (GAME_KEYS.has(e.code)) e.preventDefault();
+        const action = KEY_ACTIONS[e.code];
+        if (action) performAction(action);
     };
     let listening = false;
     const attach = () => {
@@ -289,6 +305,15 @@ export const createTetrisEngine: GameEngineFactory = (canvas, callbacks): GameEn
             paused = true;
             stopLoop();
             detach();
+        },
+        input(action, pressed) {
+            // Cada pulsación equivale a un keydown; soltar no hace nada.
+            if (!pressed || !listening) return;
+            try {
+                performAction(INPUT_ACTIONS[action]);
+            } catch {
+                /* la entrada nunca debe romper el juego */
+            }
         },
         destroy() {
             destroyed = true;

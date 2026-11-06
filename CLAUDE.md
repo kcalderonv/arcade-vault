@@ -11,6 +11,7 @@ Estado actual: la UI del prototipo ya está portada a Next.js (App Router) y hay
 ## Comandos
 
 - `npm run dev` — servidor de desarrollo (Turbopack)
+- Probar en el celular (misma red Wi-Fi): abrir `http://<IP-Wi-Fi-del-PC>:3000`. La línea `Network:` que imprime `next dev` puede mostrar el adaptador equivocado (p. ej. `192.168.56.1` es el adaptador host-only de VirtualBox, inaccesible desde el celular): obtener la IP correcta con `ipconfig` (IPv4 del adaptador "Wi-Fi"). Si no carga, Windows tiene el perfil Wi-Fi como "Pública" y bloquea el puerto: abrirlo con `netsh advfirewall firewall add rule name="Next dev 3000" dir=in action=allow protocol=TCP localport=3000 profile=public` (PowerShell como administrador) o pasar la red a "Privada". Si la página abre pero no responde (sin hidratar), añadir la IP/rango a `allowedDevOrigins` en `next.config.ts` (solo desarrollo).
 - `npm run build` / `npm run start` — build y servidor de producción
 - `npm run lint` — ESLint (flat config, `eslint.config.mjs`)
 - No hay framework de tests configurado.
@@ -58,6 +59,8 @@ Además de `rocas`, `caida` (Tetris, spec 07, port de `resources/started-games/0
 `serpentina` (Snake, spec 09, diseño nuevo: `resources/started-games/05-snake-assets/` solo trae sprites) tiene motor en `lib/games/snake/`: grilla 20×15 de celdas de 40 px sobre canvas 800×600, ticks por acumulador (150 ms −10 ms por nivel, mínimo 60), +10 por fruta, nivel cada 5 frutas, pared o cuerpo matan, flechas/WASD con cola de 2 giros. Frutas de `public/games/serpentina/fruits.png` (si falla, círculo magenta). Sin sonido; no envía `lives`, `lines` ni power-up.
 
 Los juegos reales viven como motores TypeScript en `lib/games/<juego>/` (sin globals; reciben un `<canvas>` y devuelven `GameEngine` con `start/pause/resume/stop/destroy`, ver `lib/games/types.ts`). `lib/games/registry.ts` asocia el id de juego a su motor: hoy `rocas`, `caida`, `bloque-buster` y `serpentina` (Asteroids, port de `resources/02-asteroids/`). `components/game-player.tsx` es el único shell (HUD, pausa, modal de fin y `saveScore`) y `components/game-canvas.tsx` gestiona el ciclo de vida del motor; los juegos sin motor mantienen la arena simulada.
+
+**Móvil/táctil (spec 10):** `GameEngine.input?(action, pressed)` (`InputAction`: `left|right|up|down|primary`) es la entrada no teclado; cada motor la mapea a sus acciones (el teclado sigue igual). `lib/games/touch.ts` define `TOUCH_LAYOUTS` por id de juego (Rocas y Caída: botones; Serpentina: deslizar con `SwipeLayer`; Bloque Buster: arrastre con `pointermove`) y `components/touch-controls.tsx` los pinta, visibles solo con `(hover: none) and (pointer: coarse)` (CSS). `lib/games/canvas.ts` (`setupCanvas`) da HiDPI (dpr máx. 2) sin cambiar las coordenadas lógicas 800×600. `lib/games/use-fullscreen.ts` gestiona pantalla completa (API real o pseudo-fullscreen CSS `is-pseudo-fs`) y el aviso de orientación. Ojo: el hook de Prettier reformatea `app/globals.css` entero al editarlo con `Edit`/`Write` (la hoja está en formato compacto); para tocarla sin ruido en el diff, insertar con un script.
 
 ## Leaderboard (tablas `games` y `scores`)
 
