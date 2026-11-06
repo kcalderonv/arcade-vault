@@ -1517,3 +1517,12 @@ a.lb-link { display: inline-block; }
   grid-column: 1 / -1; text-align: center; padding: 80px 0;
   min-height: 320px;
 }
+
+/* ===== rendimiento en el reproductor: sin animación ni mezcla de capas bajo el canvas ===== */
+body:has(.av-player) .av-bg::before { animation: none; }
+body:has(.av-player) .av-bg::after { mix-blend-mode: normal; opacity: 0.35; }
+body:has(.av-player) .crt-screen::after { mix-blend-mode: normal; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 4px); }
+body:has(.av-player) .crt-screen { box-shadow: none; }
+body:has(.av-player) .crt-screen::before { display: none; }
+body:has(.av-player) .crt { box-shadow: 0 0 0 3px #1b1b22, 0 0 0 4px #2a2a35; }
+body:has(.av-player) .av-bg::before, body:has(.av-player) .av-bg::after { display: none; }

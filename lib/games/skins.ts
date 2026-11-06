@@ -80,7 +80,7 @@ export interface SkinOptions {
     skin?: SkinId;
 }
 /** Juegos cuyo motor ya soporta skins (el reproductor muestra el selector solo para ellos). */
-const SKIN_GAMES = new Set<string>(['rocas']);
+const SKIN_GAMES = new Set<string>(['rocas', 'ranaria']);
 export const supportsSkins = (gameId: string) => SKIN_GAMES.has(gameId);
 export const isSkinId = (v: unknown): v is SkinId => SKIN_IDS.includes(v as SkinId);
 export const skinStorageKey = (gameId: string) => `av_skin:${gameId}`;

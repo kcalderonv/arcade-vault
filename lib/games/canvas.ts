@@ -1,5 +1,5 @@
 /** Límite del factor de píxeles para no multiplicar el coste de relleno en móviles. */
-const MAX_DPR = 2;
+const MAX_DPR = 1.5;
 /**
  * Prepara el canvas para pantallas HiDPI: resolución interna = lógica × dpr (máx. 2) y
  * transformación para que el motor siga dibujando en coordenadas lógicas (w × h).
