@@ -232,6 +232,23 @@ a { color: inherit; text-decoration: none; }
 }
 .av-mobile-backdrop.open { opacity: 1; pointer-events: auto; }
 
+/* navbar compacta en móvil: una sola fila sin desbordar (360–840 px) y panel más pequeño */
+@media (max-width: 840px) {
+  .av-nav { gap: 10px; padding: 8px 12px; }
+  .av-nav .logo { flex-shrink: 0; gap: 8px; }
+  .av-nav .logo-mark { width: 22px; height: 22px; }
+  .av-nav .logo-text { font-size: 10px; letter-spacing: 0.08em; white-space: nowrap; }
+  .av-nav .auth-btn { margin-left: 0; min-width: 0; max-width: 50vw; min-height: 36px; padding: 0 8px; font-size: 8px; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; line-height: 36px; text-align: center; }
+  .av-nav .hamburger { flex-shrink: 0; min-width: 36px; min-height: 36px; padding: 0; font-size: 16px; }
+  .av-mobile-panel { width: min(260px, 80vw); padding: 16px 14px; gap: 2px; }
+  .av-mobile-panel a { padding: 11px 8px; font-size: 10px; }
+  .av-mobile-panel .pixel:first-child { margin-bottom: 8px !important; }
+}
+@media (max-width: 400px) {
+  .av-nav .logo-text { font-size: 9px; letter-spacing: 0.04em; }
+  .av-nav .logo-mark { width: 20px; height: 20px; }
+}
+
 /* ===== generic neon button ===== */
 .btn {
   position: relative;
@@ -635,6 +652,80 @@ a { color: inherit; text-decoration: none; }
 }
 .hud-skin-select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .hud-actions { display: flex; gap: 10px; }
+.hud-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+.lbl-short { display: none; }
+
+/* ===== controles táctiles (solo dispositivos táctiles) ===== */
+.touch-controls, .touch-swipe { display: none; }
+.touch-btn {
+  position: relative;
+  min-width: 56px; min-height: 56px;
+  padding: 0 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--pixel); font-size: 16px; line-height: 1;
+  color: var(--cyan);
+  background: rgba(0,245,255,0.07);
+  border: 1px solid var(--cyan);
+  box-shadow: inset 0 0 10px rgba(0,245,255,0.12);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  touch-action: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+.touch-btn.wide { min-width: 88px; font-size: 9px; letter-spacing: 0.12em; color: var(--magenta); border-color: var(--magenta); background: rgba(255,0,110,0.07); box-shadow: inset 0 0 10px rgba(255,0,110,0.14); }
+.touch-btn.down { transform: scale(0.95); background: rgba(0,245,255,0.28); box-shadow: 0 0 14px rgba(0,245,255,0.55), inset 0 0 10px rgba(0,245,255,0.35); }
+.touch-btn.wide.down { background: rgba(255,0,110,0.3); box-shadow: 0 0 14px rgba(255,0,110,0.55), inset 0 0 10px rgba(255,0,110,0.35); }
+.touch-btn:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.touch-pad { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.touch-group { display: flex; gap: 10px; }
+.touch-hint { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-faint); text-align: center; }
+@media (hover: none) and (pointer: coarse) {
+  .touch-controls {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: 12px;
+    padding-bottom: env(safe-area-inset-bottom);
+    touch-action: none;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  .touch-swipe { display: block; position: absolute; inset: 0; z-index: 4; touch-action: none; }
+}
+.rotate-hint {
+  position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  z-index: 85;
+  padding: 8px 14px;
+  font-family: var(--pixel); font-size: 9px; letter-spacing: 0.14em; color: var(--yellow);
+  background: rgba(5,5,7,0.92); border: 1px solid var(--yellow);
+  box-shadow: 0 0 12px rgba(245,255,0,0.4);
+  pointer-events: none;
+}
+
+/* ===== pantalla completa (API real y pseudo-fullscreen CSS) ===== */
+.av-player.is-fs {
+  max-width: none; margin: 0; height: 100dvh;
+  padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  overflow: hidden; overscroll-behavior: none;
+}
+.av-player.is-pseudo-fs { position: fixed; inset: 0; z-index: 90; }
+.is-fs .player-hud { padding: 8px 12px; margin-bottom: 8px; gap: 10px; flex: 0 0 auto; }
+.is-fs .hud-stats { gap: 16px; }
+.is-fs .hud-stat .v { font-size: 13px; }
+.is-fs .crt { flex: 1 1 0; min-height: 0; padding: 8px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.is-fs .crt-screen { height: 100%; width: auto; max-width: 100%; max-height: 100%; }
+.is-fs .crt-bottom { display: none; }
+.is-fs .touch-hint { display: none; }
+/* Móvil apaisado en pantalla completa: los grupos de botones quedan a los lados del canvas. */
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) and (max-height: 520px) {
+  .av-player.is-fs { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); column-gap: 10px; }
+  .is-fs .player-hud { grid-column: 1 / -1; grid-row: 1; }
+  .is-fs .crt { grid-column: 2; grid-row: 2; }
+  .is-fs .touch-controls, .is-fs .touch-pad { display: contents; }
+  .is-fs .touch-group { grid-row: 2; align-self: center; flex-direction: column; }
+  .is-fs .touch-group:first-child { grid-column: 1; }
+  .is-fs .touch-group:last-child { grid-column: 3; }
+}
 
 .crt {
   position: relative;
@@ -959,7 +1050,46 @@ a { color: inherit; text-decoration: none; }
   .av-filters { padding: 0 16px; }
   .av-hall { padding: 0 16px; }
   .av-detail { padding: 0 16px; margin: 24px auto; }
-  .av-player { padding: 0 16px 32px; }
+  .av-player { padding: 0 12px 24px; margin: 12px auto; }
+  /* HUD compacto: marcadores en una tira; skin + acciones en una sola fila. */
+  .player-hud { padding: 10px 12px; gap: 10px; margin-bottom: 10px; }
+  .hud-stats { width: 100%; gap: 14px; flex-wrap: nowrap; justify-content: space-between; }
+  .hud-stat { gap: 3px; min-width: 0; }
+  .hud-stat .l { font-size: 8px; letter-spacing: 0.1em; }
+  .hud-stat .v { font-size: 12px; }
+  .hud-stat:first-child .v { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hud-skin { margin: 0; flex: 0 0 auto; }
+  .hud-skin .l { display: none; }
+  .hud-skin-select { font-size: 9px; padding: 0 8px; min-height: 40px; }
+  .hud-actions { flex: 1 1 0; gap: 6px; }
+  .hud-actions .btn { flex: 1 1 0; min-width: 0; min-height: 40px; padding: 0 6px; font-size: 9px; letter-spacing: 0.06em; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
+  .hud-actions .btn::before { inset: 2px; }
+  .lbl-long { display: none; }
+  .lbl-short { display: inline; font-size: 13px; line-height: 1; }
+  /* Marco CRT más fino y sin pie de página. */
+  .crt { padding: 10px; border-radius: 16px; box-shadow: 0 0 0 3px #1b1b22, 0 0 0 4px #2a2a35, 0 16px 40px -16px rgba(0,245,255,0.3); }
+  .crt-screen { border-radius: 8px / 14px; }
+  .crt-bottom { display: none; }
+  /* Modal de fin de partida compacto. */
+  .modal-bd { padding: 12px; overflow-y: auto; }
+  .modal { box-sizing: border-box; width: 100%; max-height: calc(100dvh - 24px); overflow-y: auto; padding: 18px 16px; }
+  .modal h2 { font-size: 15px; margin-bottom: 6px; }
+  .modal .final { font-size: 26px; margin: 8px 0 2px; }
+  .modal .final-label { font-size: 9px; }
+  .modal .input-row { flex-direction: column; gap: 8px; margin: 12px 0 8px; }
+  .modal .input-row input { height: 40px; }
+  .modal .input-row .btn { min-height: 40px; }
+  .modal .actions { gap: 8px; margin-top: 10px; flex-wrap: nowrap; }
+  .modal .actions .btn { flex: 1 1 0; min-width: 0; min-height: 40px; padding: 0 6px; font-size: 8px; letter-spacing: 0.06em; text-align: center; }
+  .toast-saved { margin-top: 8px; font-size: 10px; }
+}
+@media (max-height: 480px) {
+  .modal-bd { padding: 8px; }
+  .modal { padding: 12px 16px; max-height: calc(100dvh - 16px); }
+  .modal h2 { font-size: 13px; margin-bottom: 2px; }
+  .modal .final { font-size: 20px; margin: 4px 0 0; }
+  .modal .input-row { flex-direction: row; margin: 8px 0 4px; }
+  .modal .actions { margin-top: 8px; }
 }
 
 /* misc */

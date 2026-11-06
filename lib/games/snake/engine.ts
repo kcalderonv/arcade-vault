@@ -1,4 +1,5 @@
-import type { GameEngine, GameEngineFactory } from '../types';
+import { setupCanvas } from '../canvas';
+import type { GameEngine, GameEngineFactory, InputAction } from '../types';
 import {
     CELL,
     COLS,
@@ -31,12 +32,15 @@ const KEY_DIRS: Record<string, Dir> = {
     ArrowDown: { dx: 0, dy: 1 },
     KeyS: { dx: 0, dy: 1 },
 };
+const INPUT_DIRS: Record<Exclude<InputAction, 'primary'>, Dir> = {
+    left: { dx: -1, dy: 0 },
+    right: { dx: 1, dy: 0 },
+    up: { dx: 0, dy: -1 },
+    down: { dx: 0, dy: 1 },
+};
 const RIGHT: Dir = { dx: 1, dy: 0 };
 export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEngine => {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D no disponible');
-    canvas.width = W;
-    canvas.height = H;
+    const ctx = setupCanvas(canvas, W, H);
     // ── Estado del juego (todo dentro del cierre) ──────────────────────────────
     let snake: Cell[] = [];
     let dir: Dir = RIGHT;
@@ -178,14 +182,18 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
     const clearQueue = () => {
         queue = [];
     };
-    const onKeyDown = (e: KeyboardEvent) => {
-        const wanted = KEY_DIRS[e.code];
-        if (!wanted || isFormTarget(e.target)) return;
-        e.preventDefault();
+    /** Encola un giro (teclado o táctil): máx. 2, sin 180° ni repetir la dirección vigente. */
+    const requestTurn = (wanted: Dir) => {
         if (paused || phase !== 'playing' || destroyed || queue.length >= MAX_QUEUED_TURNS) return;
         const last = queue.length > 0 ? queue[queue.length - 1] : dir;
         if (isOpposite(wanted, last) || (wanted.dx === last.dx && wanted.dy === last.dy)) return;
         queue.push(wanted);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+        const wanted = KEY_DIRS[e.code];
+        if (!wanted || isFormTarget(e.target)) return;
+        e.preventDefault();
+        requestTurn(wanted);
     };
     const loadFruits = () => {
         const img = new Image();
@@ -226,6 +234,11 @@ export const createSnakeEngine: GameEngineFactory = (canvas, callbacks): GameEng
             rafId = 0;
             phase = 'over';
             clearQueue();
+        },
+        input(action: InputAction, pressed: boolean) {
+            if (!pressed || action === 'primary') return;
+            const wanted = INPUT_DIRS[action];
+            if (wanted) requestTurn(wanted);
         },
         destroy() {
             if (destroyed) return;

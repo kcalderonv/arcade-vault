@@ -1,11 +1,14 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { submitScore } from '@/app/juegos/[id]/jugar/actions';
 import { GameCanvas } from '@/components/game-canvas';
+import { SwipeLayer, TouchControls } from '@/components/touch-controls';
 import { getEngine } from '@/lib/games/registry';
 import { SKIN_IDS, SKINS, supportsSkins, type SkinId } from '@/lib/games/skins';
-import type { GameState } from '@/lib/games/types';
+import { TOUCH_LAYOUTS } from '@/lib/games/touch';
+import type { GameEngine, GameState } from '@/lib/games/types';
+import { useFullscreen } from '@/lib/games/use-fullscreen';
 import { useSkin } from '@/lib/games/use-skin';
 import { useSession } from '@/lib/session';
 import type { Game } from '@/lib/types';
@@ -25,6 +28,12 @@ export function GamePlayer({ game }: { game: Game }) {
     // Cambiar la clave remonta el canvas y reinicia el motor.
     const [runId, setRunId] = useState(0);
     const engine = getEngine(game.id);
+    // Entrada táctil: motor activo (lo rellena GameCanvas) y pantalla completa.
+    const engineRef = useRef<GameEngine | null>(null);
+    const playerRef = useRef<HTMLDivElement>(null);
+    const fullscreen = useFullscreen(playerRef);
+    const touchLayout = engine ? TOUCH_LAYOUTS[game.id] : undefined;
+    const touchActive = !paused && !over;
     const hasSkins = !!engine && supportsSkins(game.id);
     // Skin persistido en localStorage (classic en SSR y por defecto).
     const [skin, chooseSkin] = useSkin(game.id);
@@ -85,9 +94,12 @@ export function GamePlayer({ game }: { game: Game }) {
         });
     };
     return (
-        <div className="av-player fade-in">
+        <div
+            ref={playerRef}
+            className={`av-player fade-in${fullscreen.mode !== 'none' ? ' is-fs' : ''}${fullscreen.mode === 'pseudo' ? ' is-pseudo-fs' : ''}`}
+        >
             <div className="player-hud">
-                <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                <div className="hud-stats">
                     <div className="hud-stat">
                         <div className="l">Jugador</div>
                         <div className="v" style={{ color: 'var(--ink)' }}>
@@ -147,13 +159,17 @@ export function GamePlayer({ game }: { game: Game }) {
                 <div className="hud-actions">
                     <button
                         className="btn yellow"
+                        aria-label={paused ? 'Reanudar' : 'Pausa'}
                         onClick={(e) => {
                             // Soltar el foco para que Espacio/flechas lleguen al juego.
                             e.currentTarget.blur();
                             setPaused((p) => !p);
                         }}
                     >
-                        {paused ? 'REANUDAR' : 'PAUSA'}
+                        <span className="lbl-long">{paused ? 'REANUDAR' : 'PAUSA'}</span>
+                        <span className="lbl-short" aria-hidden="true">
+                            {paused ? '▶' : '❚❚'}
+                        </span>
                     </button>
                     <button
                         className="btn magenta"
@@ -163,6 +179,22 @@ export function GamePlayer({ game }: { game: Game }) {
                         }}
                     >
                         FIN
+                    </button>
+                    <button
+                        className="btn ghost"
+                        aria-pressed={fullscreen.mode !== 'none'}
+                        aria-label={fullscreen.mode === 'none' ? 'Pantalla completa' : 'Salir de pantalla completa'}
+                        onClick={(e) => {
+                            e.currentTarget.blur();
+                            fullscreen.toggle();
+                        }}
+                    >
+                        <span className="lbl-long">
+                            {fullscreen.mode === 'none' ? 'PANTALLA COMPLETA' : 'SALIR DE PANTALLA COMPLETA'}
+                        </span>
+                        <span className="lbl-short" aria-hidden="true">
+                            {fullscreen.mode === 'none' ? '⛶' : '✕'}
+                        </span>
                     </button>
                     <Link className="btn ghost" href={`/juegos/${game.id}`}>
                         SALIR
@@ -180,6 +212,7 @@ export function GamePlayer({ game }: { game: Game }) {
                             paused={paused}
                             over={over}
                             skin={skin}
+                            engineRef={engineRef}
                         />
                     ) : (
                         <div className="game-arena">
@@ -190,6 +223,7 @@ export function GamePlayer({ game }: { game: Game }) {
                             <div className="player-ship"></div>
                         </div>
                     )}
+                    {touchLayout?.swipe && <SwipeLayer engineRef={engineRef} active={touchActive} />}
                     {paused && (
                         <div className="crt-content" style={{ background: 'rgba(0,0,0,0.6)', zIndex: 5 }}>
                             <div>
@@ -217,6 +251,12 @@ export function GamePlayer({ game }: { game: Game }) {
                     <span>CARGA · 1MB</span>
                 </div>
             </div>
+            {touchLayout && <TouchControls layout={touchLayout} engineRef={engineRef} active={touchActive} />}
+            {fullscreen.rotateHint && (
+                <div className="rotate-hint" role="status">
+                    ↻ GIRA EL DISPOSITIVO
+                </div>
+            )}
             {over && (
                 <div className="modal-bd">
                     <div className="modal">

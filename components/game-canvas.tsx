@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef, type RefObject } from 'react';
 import type { SkinId } from '@/lib/games/skins';
 import type { GameEngine, GameEngineFactory, GameState } from '@/lib/games/types';
 interface GameCanvasProps {
@@ -11,12 +11,22 @@ interface GameCanvasProps {
     over: boolean;
     /** Skin visual; solo lo aplican los motores con soporte (default `classic`). */
     skin?: SkinId;
+    /** Ref que recibe el motor activo (para la entrada táctil); null al desmontar. */
+    engineRef?: RefObject<GameEngine | null>;
 }
 /**
  * Monta el motor sobre un <canvas> y gestiona su ciclo de vida.
  * Para reiniciar la partida, el padre cambia la `key` de este componente.
  */
-export function GameCanvas({ factory, onState, onGameOver, paused, over, skin = 'classic' }: GameCanvasProps) {
+export function GameCanvas({
+    factory,
+    onState,
+    onGameOver,
+    paused,
+    over,
+    skin = 'classic',
+    engineRef: externalEngineRef,
+}: GameCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const engineRef = useRef<GameEngine | null>(null);
     const handleState = useEffectEvent(onState);
@@ -34,12 +44,14 @@ export function GameCanvas({ factory, onState, onGameOver, paused, over, skin = 
             { skin: currentSkin() },
         );
         engineRef.current = engine;
+        if (externalEngineRef) externalEngineRef.current = engine;
         engine.start();
         return () => {
             engine.destroy();
             engineRef.current = null;
+            if (externalEngineRef) externalEngineRef.current = null;
         };
-    }, [factory]);
+    }, [factory, externalEngineRef]);
     // Cambio de skin en caliente, sin reiniciar la partida.
     useEffect(() => {
         engineRef.current?.setSkin?.(skin);
@@ -58,6 +70,7 @@ export function GameCanvas({ factory, onState, onGameOver, paused, over, skin = 
             height={600}
             aria-label="Pantalla del juego"
             style={{
+                touchAction: 'none',
                 position: 'absolute',
                 inset: 0,
                 width: '100%',
