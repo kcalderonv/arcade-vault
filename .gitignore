@@ -45,3 +45,6 @@ next-env.d.ts
 .playwright-mcp/
 .playwright-screenshots/
 !.playwright-screenshots/.gitkeep
+
+specs/game-jam/
+!specs/game-jam/.gitkeep

@@ -1,3 +1,4 @@
+import type { SkinId, SkinOptions } from './skins';
 export interface GameState {
     score: number;
     /** Ausente en juegos sin vidas (Tetris): el HUD oculta VIDAS. */
@@ -23,5 +24,11 @@ export interface GameEngine {
     stop(): void;
     /** Detiene el bucle y quita todos los listeners. Idempotente. */
     destroy(): void;
+    /** Opcional: cambia el skin en caliente (solo motores con soporte de skins). */
+    setSkin?(skin: SkinId): void;
 }
-export type GameEngineFactory = (canvas: HTMLCanvasElement, callbacks: GameEngineCallbacks) => GameEngine;
+export type GameEngineFactory = (
+    canvas: HTMLCanvasElement,
+    callbacks: GameEngineCallbacks,
+    options?: SkinOptions,
+) => GameEngine;

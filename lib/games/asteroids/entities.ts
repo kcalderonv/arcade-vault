@@ -1,5 +1,6 @@
 import { H, POWERUP_TTL, RADII, SPEEDS, TRIPLE_SPREAD, W } from './constants';
 import { rand, randInt, wrap } from './utils';
+import { applyGlow, type SkinPalette } from '../skins';
 export type Keys = Record<string, boolean | undefined>;
 // ── Bullet ───────────────────────────────────────────────────────────────────
 export class Bullet {
@@ -23,11 +24,19 @@ export class Bullet {
         this.ttl -= dt;
         if (this.ttl <= 0) this.dead = true;
     }
-    draw(ctx: CanvasRenderingContext2D) {
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+    draw(ctx: CanvasRenderingContext2D, skin: SkinPalette) {
+        ctx.save();
+        ctx.fillStyle = skin.accent;
+        applyGlow(ctx, skin, skin.accent);
+        if (skin.pixel) {
+            const s = this.radius * 2;
+            ctx.fillRect(Math.round(this.x - s / 2), Math.round(this.y - s / 2), s, s);
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     }
 }
 // ── Asteroid ─────────────────────────────────────────────────────────────────
@@ -70,13 +79,14 @@ export class Asteroid {
         if (this.size <= 1) return [];
         return [new Asteroid(this.x, this.y, this.size - 1), new Asteroid(this.x, this.y, this.size - 1)];
     }
-    draw(ctx: CanvasRenderingContext2D) {
+    draw(ctx: CanvasRenderingContext2D, skin: SkinPalette) {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rot);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
-        ctx.lineJoin = 'round';
+        ctx.strokeStyle = skin.secondary;
+        ctx.lineWidth = skin.lineWidth;
+        ctx.lineJoin = skin.lineJoin;
+        applyGlow(ctx, skin, skin.secondary);
         ctx.beginPath();
         ctx.moveTo(this.verts[0][0], this.verts[0][1]);
         for (let i = 1; i < this.verts.length; i++) ctx.lineTo(this.verts[i][0], this.verts[i][1]);
@@ -108,22 +118,25 @@ export class PowerUp {
         this.ttl -= dt;
         if (this.ttl <= 0) this.dead = true;
     }
-    draw(ctx: CanvasRenderingContext2D) {
+    draw(ctx: CanvasRenderingContext2D, skin: SkinPalette) {
         if (this.ttl < 2 && Math.floor(this.ttl * 8) % 2 === 0) return;
         const pulse = 0.85 + Math.sin(performance.now() / 150) * 0.15;
         ctx.save();
+        applyGlow(ctx, skin, skin.bonus);
+        ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(Math.PI / 4);
-        ctx.strokeStyle = '#0ff';
+        ctx.strokeStyle = skin.bonus;
         ctx.lineWidth = 2;
         const r = this.radius * pulse;
         ctx.strokeRect(-r, -r, r * 2, r * 2);
         ctx.restore();
-        ctx.fillStyle = '#0ff';
+        ctx.fillStyle = skin.bonus;
         ctx.font = 'bold 12px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('3x', this.x, this.y);
+        ctx.restore();
     }
 }
 // ── Ship ─────────────────────────────────────────────────────────────────────
@@ -189,16 +202,17 @@ export class Ship {
         }
         return [new Bullet(ox, oy, this.angle)];
     }
-    draw(ctx: CanvasRenderingContext2D) {
+    draw(ctx: CanvasRenderingContext2D, skin: SkinPalette) {
         if (this.dead) return;
         // Parpadeo durante invencibilidad de reaparición
         if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0) return;
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
-        ctx.lineJoin = 'round';
+        ctx.strokeStyle = skin.primary;
+        ctx.lineWidth = skin.lineWidth;
+        ctx.lineJoin = skin.lineJoin;
+        applyGlow(ctx, skin, skin.primary);
         // Silueta clásica: triángulo con muesca trasera
         ctx.beginPath();
         ctx.moveTo(20, 0); // nariz
@@ -213,7 +227,8 @@ export class Ship {
             ctx.moveTo(-8, -4);
             ctx.lineTo(-8 - rand(6, 14), 0);
             ctx.lineTo(-8, 4);
-            ctx.strokeStyle = 'rgba(255, 130, 0, 0.85)';
+            ctx.strokeStyle = skin.danger;
+            applyGlow(ctx, skin, skin.danger);
             ctx.stroke();
         }
         ctx.restore();
@@ -244,13 +259,18 @@ export class Particle {
         this.ttl -= dt;
         if (this.ttl <= 0) this.dead = true;
     }
-    draw(ctx: CanvasRenderingContext2D) {
-        const alpha = this.ttl / this.life;
-        ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
-        ctx.lineWidth = 1;
+    draw(ctx: CanvasRenderingContext2D, skin: SkinPalette) {
+        let alpha = this.ttl / this.life;
+        // Retro: alfa escalonado (sin degradados suaves).
+        if (skin.pixel) alpha = Math.ceil(alpha * 3) / 3;
+        ctx.save();
+        ctx.strokeStyle = `rgba(${skin.particleRgb},${alpha.toFixed(2)})`;
+        ctx.lineWidth = skin.pixel ? 2 : 1;
+        applyGlow(ctx, skin, `rgb(${skin.particleRgb})`, 0.5);
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(this.x - this.vx * 0.05, this.y - this.vy * 0.05);
         ctx.stroke();
+        ctx.restore();
     }
 }

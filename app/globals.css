@@ -627,6 +627,13 @@ a { color: inherit; text-decoration: none; }
 .hud-stat .v { font-family: var(--pixel); font-size: 16px; color: var(--cyan); text-shadow: 0 0 6px rgba(0,245,255,0.5); }
 .hud-stat.lives .v { color: var(--magenta); text-shadow: 0 0 6px rgba(255,0,110,0.5); }
 .hud-stat.level .v { color: var(--yellow); text-shadow: 0 0 6px rgba(245,255,0,0.5); }
+.hud-skin { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0 auto; }
+.hud-skin .l { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); letter-spacing: 0.14em; text-transform: uppercase; }
+.hud-skin-select {
+  font-family: var(--pixel); font-size: 11px; color: var(--yellow);
+  background: var(--bg); border: 1px solid var(--line); padding: 6px 10px; cursor: pointer;
+}
+.hud-skin-select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .hud-actions { display: flex; gap: 10px; }
 
 .crt {
