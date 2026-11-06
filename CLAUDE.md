@@ -83,13 +83,19 @@ Skills en `.claude/skills/` (todas con `disable-model-invocation`, se invocan a 
 - `/spec` y `/spec-impl` — de `Klerith/fernando-skills` (fijadas en `skills-lock.json`).
 - `/add-game <carpeta de resources/started-games | nombre | descripción>` — skill propia: **solo genera la spec** (estado `Borrador`) para integrar un juego (motor TS, registro, reproductor, leaderboard). No escribe código ni toca `lib/`, `components/`, `app/` ni `resources/started-games/**`. Incluye `reference.md` y `spec-template.md`. Después se aprueba y se ejecuta `/spec-impl`.
 
-Para añadir un juego nuevo: `/add-game` → revisar y aprobar la spec → `/spec-impl`.
+- `/spec-impl-game <NN-slug>` — skill propia: hace exactamente lo mismo que `/spec-impl` (lee `.claude/skills/spec-impl/SKILL.md` y ejecuta sus fases 1–4) y, al terminar la implementación, lanza en secuencia (nunca en paralelo) los agentes `skin-designer` y luego `mobile-porter`. Los agentes no commitean; `skin-designer` pide tu aprobación antes de editar.
+
+Para añadir un juego nuevo: `/add-game` → revisar y aprobar la spec → `/spec-impl-game` (o `/spec-impl` si no quieres la revisión de skins y móvil).
 
 ## Agentes
 
 Subagentes del proyecto en `.claude/agents/`:
 
-- `game-planner` — planifica y decide qué juego encaja con la plataforma. Compara 3–5 candidatos nuevos con criterios puntuados (encaje retro/arcade, viabilidad con `GameEngine`, coste, diversidad, rejugabilidad, assets), recomienda uno y sugiere el siguiente paso (`/add-game`). No escribe código ni specs. Tiene memoria persistente (`memory: project`) en `.claude/agent-memory/game-planner/` (`MEMORY.md`, `suggestions.md`, `preferences.md`) para no repetir lo ya sugerido; solo escribe ahí. Flujo para un juego nuevo: `game-planner` → `/add-game` → aprobar la spec → `/spec-impl`.
+- `game-planner` — planifica y decide qué juego encaja con la plataforma. Compara 3–5 candidatos nuevos con criterios puntuados (encaje retro/arcade, viabilidad con `GameEngine`, coste, diversidad, rejugabilidad, assets), recomienda uno y sugiere el siguiente paso (`/add-game`). No escribe código ni specs. Tiene memoria persistente (`memory: project`) en `.claude/agent-memory/game-planner/` (`MEMORY.md`, `suggestions.md`, `preferences.md`) para no repetir lo ya sugerido; solo escribe ahí. Flujo para un juego nuevo: `game-planner` → `/add-game` → aprobar la spec → `/spec-impl-game`.
+- `game-expander` — piensa ideas para **ampliar los juegos ya existentes** (power-ups, modos, niveles, desafíos, combos), puntuadas por impacto/coste/riesgo y filtradas por el contrato `GameEngine`, el gamepad táctil y el leaderboard (`score` único). No propone juegos nuevos ni escribe código/specs. Memoria en `.claude/agent-memory/game-expander/` (`ideas.md`, `preferences.md`). Siguiente paso: `/spec`.
+- `skin-designer` — audita que cada juego con motor tenga 3 skins (`classic` por defecto, `retro`, `neon`) que se vean bien en modo oscuro; propone paletas y solo edita con aprobación. Selector en el HUD de `game-player.tsx`; juegos con skins en `SKIN_GAMES` (`lib/games/skins.ts`). Memoria en `.claude/agent-memory/skin-designer/`.
+- `mobile-porter` — revisa que los juegos y pantallas se vean y controlen bien en móvil web y en la app móvil (viewport, `TOUCH_LAYOUTS`, `input()`, pantalla completa, safe-area). Corrige solo lo móvil y deja lo no verificable como prueba manual en dispositivo. Memoria en `.claude/agent-memory/mobile-porter/`.
+- `game-jam` — dado un tema, escribe varias specs completas (estado `Borrador`) de juegos nuevos en `specs/game-jam/<game-id>/` para revisarlas.
 
 ## Hooks y MCP
 
