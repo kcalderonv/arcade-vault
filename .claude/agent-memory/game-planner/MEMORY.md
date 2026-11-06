@@ -1,0 +1,2 @@
+- [suggestions.md](suggestions.md) — historial de candidatos sugeridos con fecha, puntuación y estado
+- [preferences.md](preferences.md) — criterios y preferencias del usuario (vacío por ahora)
