@@ -26,3 +26,12 @@ export async function getBestScore(gameId: string, userId: string): Promise<Lead
     if (error) throw error;
     return data?.[0] ?? null;
 }
+/** Número de puntajes guardados del juego (`count` exacto). Lanza si Supabase falla. */
+export async function getSavedPlaysCount(gameId: string): Promise<number> {
+    const { count, error } = await createClient()
+        .from('scores')
+        .select('id', { count: 'exact', head: true })
+        .eq('game_id', gameId);
+    if (error) throw error;
+    return count ?? 0;
+}

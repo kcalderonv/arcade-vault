@@ -2,16 +2,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { GAMES } from '@/lib/data';
+import { fmt, fmtDate } from '@/lib/format';
 import { getBestScore, getTopScores } from '@/lib/scores';
 import { useSession } from '@/lib/session';
 import type { LeaderboardRow } from '@/lib/types';
-const fmt = (n: number) => n.toLocaleString('es-ES');
-const fmtDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-    });
 const tier = (i: number) => (i === 0 ? ' top1' : i === 1 ? ' top2' : i === 2 ? ' top3' : '');
 type Loaded = {
     key: string;

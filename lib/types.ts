@@ -8,14 +8,6 @@ export interface Game {
     cat: Category;
     cover: string; // clase CSS de la portada, p. ej. "cover-bricks"
     color: AccentColor; // color del botón JUGAR en la tarjeta
-    best: number; // mejor puntuación global (mock)
-    plays: string; // "12.4K" (mock, ya formateado)
-}
-export interface ScoreRow {
-    rank: number;
-    name: string;
-    score: number;
-    date: string; // "DD/MM/2026"
 }
 export interface SessionUser {
     id: string; // auth.users.id (uuid)
