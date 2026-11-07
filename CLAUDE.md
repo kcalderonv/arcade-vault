@@ -50,6 +50,8 @@ Conexión con `@supabase/ssr` (spec 04); la sesión de la app es la de Supabase 
 - `proxy.ts` + `lib/supabase/proxy.ts` — refresca las cookies de sesión; no redirige ni bloquea rutas (en Next 16 `middleware` está obsoleto y se llama `proxy`).
 - `GET /api/salud` — diagnóstico de conexión: `{ ok: true }` o `503 { ok: false }`.
 
+Seguridad básica (spec 14): `next.config.ts` añade a todas las rutas los headers `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Strict-Transport-Security` (`max-age=31536000`, solo efectivo en HTTPS) y `Permissions-Policy` (cámara, micrófono y geolocalización desactivados); no hay CSP. La migración `20261106150000_revocar_rls_auto_enable.sql` revoca `EXECUTE` de `rls_auto_enable()` (función del event trigger `ensure_rls`) a `anon`/`authenticated`. Avisos de `get_advisors` aceptados: `submit_score`, `username_available` y `auth_leaked_password_protection` (requiere plan Pro; la cuenta es gratuita). Ajustes manuales en el panel de Auth: contraseña mínima 8 y límite de altas/inicios de 10 por 5 minutos por IP.
+
 ## Juegos (motores)
 
 Además de `rocas`, `caida` (Tetris, spec 07, port de `resources/started-games/03-tetris/`) tiene motor en `lib/games/tetris/`: canvas 800×600 con el tablero 10×20 centrado y la pieza SIGUIENTE dibujada a la derecha. `GameState.lives` y `lines` son opcionales: el HUD de `game-player.tsx` muestra VIDAS solo si el motor envía `lives` y LÍNEAS solo si envía `lines`.
@@ -90,7 +92,7 @@ Spec 06. Migración versionada en `supabase/migrations/20261103120000_games_y_sc
 
 Flujo Spec Driven: `/spec` (diseña la spec) → el humano pasa el estado a `Aprobado` → `/spec-impl NN-slug` (crea la rama `spec-NN-slug`, implementa paso a paso con pausas para revisar diffs). Las specs viven en `specs/NN-slug.md` (`specs/.spec-config.yml`: `AutoCreateBranch: true`). Cada spec se integra por PR desde su rama.
 
-Specs hechas: 01 MVP pantallas visuales · 02 home y acerca-de · 03 envío de correo de contacto · 04 conexión Supabase · 05 juego Asteroides · 06 leaderboard y tablas `games`/`scores` · 07 Tetris (`caida`) · 08 Arkanoid (`bloque-buster`) y biblioteca real · 09 Snake (`serpentina`) · 10 controles táctiles móviles · 11 gamepad neón MK-II · 12 autenticación (registro, login, perfil y recuperación) · Frogger (`ranaria`, `specs/froger/frogger.md`). Borradores de la game jam en `specs/game-jam/<game-id>/`.
+Specs hechas: 01 MVP pantallas visuales · 02 home y acerca-de · 03 envío de correo de contacto · 04 conexión Supabase · 05 juego Asteroides · 06 leaderboard y tablas `games`/`scores` · 07 Tetris (`caida`) · 08 Arkanoid (`bloque-buster`) y biblioteca real · 09 Snake (`serpentina`) · 10 controles táctiles móviles · 11 gamepad neón MK-II · 12 autenticación (registro, login, perfil y recuperación) · 13 detalle del juego con datos reales · 14 seguridad básica · Frogger (`ranaria`, `specs/froger/frogger.md`). Borradores de la game jam en `specs/game-jam/<game-id>/`.
 
 Skills en `.claude/skills/` (todas con `disable-model-invocation`, se invocan a mano):
 

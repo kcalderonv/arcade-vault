@@ -1,0 +1,2 @@
+- [Auditorías](audits.md) — historial y línea base verificada (2026-11-06) con hallazgos abiertos
+- [Riesgos aceptados](accepted-risks.md) — lo que no hay que volver a reportar
