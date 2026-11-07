@@ -41,6 +41,8 @@ Maqueta estática "Arcade Vault · Portal Retro" (React 18 UMD + Babel en el nav
 
 El formulario envía correo real vía Server Action (`app/acerca-de/actions.ts`) y nodemailer (`lib/mail.ts`). Se configura solo con variables de entorno en `.env.local` (plantilla: `.env.example`): `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO`, `CONTACT_FROM`. Desarrollo usa Mailtrap; en producción, sin `SMTP_USER` se conecta a un SMTP local sin autenticación y con `SMTP_USER`/`SMTP_PASS` usa SMTP autenticado. Nunca usar el prefijo `NEXT_PUBLIC_` en estas variables.
 
+Límite de envíos (spec 15): `sendContactMessage` aplica, tras el honeypot y la validación, 3 envíos por 10 minutos por IP y 30 por hora en total (constantes `CONTACT_LIMITS` en `lib/rate-limit.ts`, ventana deslizante en memoria con estado en `globalThis`). La IP sale del primer valor de `x-forwarded-for` (sin cabecera, cubo `desconocida`). El estado es por proceso: se pierde al reiniciar y no se comparte entre instancias; sin proxy inverso el cliente podría falsear la cabecera (el tope global sigue protegiendo el SMTP).
+
 ## Supabase (conexión)
 
 Conexión con `@supabase/ssr` (spec 04); la sesión de la app es la de Supabase Auth (spec 12, ver sección Autenticación). Variables en `.env.local` (plantilla: `.env.example`): `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (solo clave publicable `sb_publishable_...`; nunca `service_role` ni claves secretas con `NEXT_PUBLIC_`).
@@ -92,7 +94,7 @@ Spec 06. Migración versionada en `supabase/migrations/20261103120000_games_y_sc
 
 Flujo Spec Driven: `/spec` (diseña la spec) → el humano pasa el estado a `Aprobado` → `/spec-impl NN-slug` (crea la rama `spec-NN-slug`, implementa paso a paso con pausas para revisar diffs). Las specs viven en `specs/NN-slug.md` (`specs/.spec-config.yml`: `AutoCreateBranch: true`). Cada spec se integra por PR desde su rama.
 
-Specs hechas: 01 MVP pantallas visuales · 02 home y acerca-de · 03 envío de correo de contacto · 04 conexión Supabase · 05 juego Asteroides · 06 leaderboard y tablas `games`/`scores` · 07 Tetris (`caida`) · 08 Arkanoid (`bloque-buster`) y biblioteca real · 09 Snake (`serpentina`) · 10 controles táctiles móviles · 11 gamepad neón MK-II · 12 autenticación (registro, login, perfil y recuperación) · 13 detalle del juego con datos reales · 14 seguridad básica · Frogger (`ranaria`, `specs/froger/frogger.md`). Borradores de la game jam en `specs/game-jam/<game-id>/`.
+Specs hechas: 01 MVP pantallas visuales · 02 home y acerca-de · 03 envío de correo de contacto · 04 conexión Supabase · 05 juego Asteroides · 06 leaderboard y tablas `games`/`scores` · 07 Tetris (`caida`) · 08 Arkanoid (`bloque-buster`) y biblioteca real · 09 Snake (`serpentina`) · 10 controles táctiles móviles · 11 gamepad neón MK-II · 12 autenticación (registro, login, perfil y recuperación) · 13 detalle del juego con datos reales · 14 seguridad básica · 15 límite de envíos del formulario de contacto · Frogger (`ranaria`, `specs/froger/frogger.md`). Borradores de la game jam en `specs/game-jam/<game-id>/`.
 
 Skills en `.claude/skills/` (todas con `disable-model-invocation`, se invocan a mano):
 
