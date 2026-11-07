@@ -1,79 +1,69 @@
-"use client";
-
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react";
-import type { SessionUser } from "./types";
-
-const KEY = "av_user";
-const listeners = new Set<() => void>();
-
-// Cacheamos el valor crudo para que getSnapshot devuelva una referencia estable.
-let cachedRaw: string | null = null;
-let cachedUser: SessionUser | null = null;
-
-function readUser(): SessionUser | null {
-  let raw: string | null = null;
-  try {
-    raw = localStorage.getItem(KEY);
-  } catch {
-    return cachedUser;
-  }
-  if (raw === cachedRaw) return cachedUser;
-  cachedRaw = raw;
-  try {
-    cachedUser = raw ? (JSON.parse(raw) as SessionUser) : null;
-  } catch {
-    cachedUser = null;
-  }
-  return cachedUser;
-}
-
-function writeUser(user: SessionUser | null) {
-  try {
-    if (user) localStorage.setItem(KEY, JSON.stringify(user));
-    else localStorage.removeItem(KEY);
-  } catch {
-    // localStorage bloqueado: se mantiene solo en memoria.
-    cachedRaw = user ? JSON.stringify(user) : null;
-    cachedUser = user;
-  }
-  listeners.forEach((l) => l());
-}
-
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  window.addEventListener("storage", cb);
-  return () => {
-    listeners.delete(cb);
-    window.removeEventListener("storage", cb);
-  };
-}
-
+'use client';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { SessionUser } from './types';
 interface SessionContextValue {
-  user: SessionUser | null;
-  login: (user: SessionUser) => void;
-  logout: () => void;
+    user: SessionUser | null;
+    /** false hasta resolver la sesión inicial y el perfil (evita el parpadeo de "Iniciar Sesión"). */
+    ready: boolean;
+    logout: () => Promise<void>;
+    /** Recarga el perfil (p. ej. tras renombrar al jugador). */
+    refresh: () => Promise<void>;
 }
-
 const SessionContext = createContext<SessionContextValue | null>(null);
-
-export function SessionProvider({ children }: { children: ReactNode }) {
-  // Snapshot de servidor = null: el primer render coincide con el servidor.
-  const user = useSyncExternalStore(subscribe, readUser, () => null);
-  const login = useCallback((u: SessionUser) => writeUser(u), []);
-  const logout = useCallback(() => writeUser(null), []);
-  const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
-  return <SessionContext value={value}>{children}</SessionContext>;
+interface Profile {
+    id: string;
+    name: string | null; // null: el usuario existe pero no tiene perfil
 }
-
+/** Lee el nombre de jugador. Sin perfil no hay jugador válido: se registra el fallo y se cierra la sesión. */
+async function fetchProfile(id: string): Promise<Profile> {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('profiles').select('username').eq('id', id).maybeSingle();
+    if (error || !data) {
+        console.error('[session] no se pudo cargar el perfil:', error ?? 'perfil inexistente');
+        await supabase.auth.signOut();
+        return { id, name: null };
+    }
+    return { id, name: data.username };
+}
+export function SessionProvider({ children }: { children: ReactNode }) {
+    // undefined = sesión aún sin resolver; null = sin sesión.
+    const [userId, setUserId] = useState<string | null | undefined>(undefined);
+    const [profile, setProfile] = useState<Profile | undefined>(undefined);
+    // Solo actualiza estado dentro del callback (sin llamadas a Supabase: evita bloqueos del cliente de Auth).
+    useEffect(() => {
+        const { data } = createClient().auth.onAuthStateChange((_event, session) => {
+            setUserId(session?.user.id ?? null);
+        });
+        return () => data.subscription.unsubscribe();
+    }, []);
+    // El perfil se carga en un efecto aparte, cuando cambia el usuario (el estado se fija en el .then).
+    useEffect(() => {
+        if (!userId) return;
+        let active = true;
+        fetchProfile(userId).then((p) => {
+            if (active) setProfile(p);
+        });
+        return () => {
+            active = false;
+        };
+    }, [userId]);
+    const logout = useCallback(async () => {
+        await createClient().auth.signOut();
+    }, []);
+    const refresh = useCallback(async () => {
+        if (userId) setProfile(await fetchProfile(userId));
+    }, [userId]);
+    const user = useMemo<SessionUser | null>(() => {
+        if (!userId || profile?.id !== userId || !profile.name) return null;
+        return { id: userId, name: profile.name };
+    }, [userId, profile]);
+    const ready = userId === null || (userId !== undefined && profile?.id === userId);
+    const value = useMemo(() => ({ user, ready, logout, refresh }), [user, ready, logout, refresh]);
+    return <SessionContext value={value}>{children}</SessionContext>;
+}
 export function useSession(): SessionContextValue {
-  const ctx = useContext(SessionContext);
-  if (!ctx) throw new Error("useSession debe usarse dentro de SessionProvider");
-  return ctx;
+    const ctx = useContext(SessionContext);
+    if (!ctx) throw new Error('useSession debe usarse dentro de SessionProvider');
+    return ctx;
 }

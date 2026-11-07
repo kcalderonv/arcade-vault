@@ -19,7 +19,6 @@ export function GamePlayer({ game }: { game: Game }) {
     const [lines, setLines] = useState<number | null>(null);
     const [paused, setPaused] = useState(false);
     const [over, setOver] = useState(false);
-    const [nameEdit, setNameEdit] = useState<string | null>(null);
     const [saved, setSaved] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
     const [saving, startSaving] = useTransition();
@@ -37,8 +36,8 @@ export function GamePlayer({ game }: { game: Game }) {
     const hasSkins = !!engine && supportsSkins(game.id);
     // Skin persistido en localStorage (classic en SSR y por defecto).
     const [skin, chooseSkin] = useSkin(game.id);
-    // Nombre: lo editado en el modal, si no el de la sesión, si no INVITADO.
-    const name = nameEdit ?? user?.name ?? 'INVITADO';
+    // Nombre: el de la sesión (perfil), si no INVITADO.
+    const name = user?.name ?? 'INVITADO';
     // Con motor real el nivel lo calcula el juego; en la simulación, cada 2500 puntos.
     const level = engine ? engineLevel : 1 + Math.floor(score / 2500);
     const handleState = (s: GameState) => {
@@ -85,7 +84,7 @@ export function GamePlayer({ game }: { game: Game }) {
         setSaveError(null);
         startSaving(async () => {
             try {
-                const res = await submitScore(game.id, name, score);
+                const res = await submitScore(game.id, score);
                 if (res.ok) setSaved(true);
                 else setSaveError(res.error);
             } catch {
@@ -263,14 +262,19 @@ export function GamePlayer({ game }: { game: Game }) {
                         <h2>FIN DEL JUEGO</h2>
                         <div className="final-label">PUNTUACIÓN FINAL</div>
                         <div className="final">{score.toLocaleString('es-ES')}</div>
-                        {!saved ? (
+                        {!user ? (
+                            <div className="guest-save">
+                                <div className="mono" role="status">
+                                    ▸ INICIA SESIÓN PARA GUARDAR TU PUNTUACIÓN
+                                </div>
+                                <Link className="btn yellow" href={`/auth?next=/juegos/${game.id}/jugar`}>
+                                    INICIAR SESIÓN
+                                </Link>
+                            </div>
+                        ) : !saved ? (
                             <>
                                 <div className="input-row">
-                                    <input
-                                        value={name}
-                                        onChange={(e) => setNameEdit(e.target.value.toUpperCase().slice(0, 10))}
-                                        placeholder="TUS INICIALES"
-                                    />
+                                    <input value={name} readOnly aria-label="Jugador" />
                                     <button className="btn yellow" disabled={saving} onClick={handleSave}>
                                         {saving ? 'GUARDANDO…' : saveError ? 'REINTENTAR' : 'GUARDAR PUNTUACIÓN'}
                                     </button>
